@@ -2,8 +2,8 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
-# Build stage
-FROM ubuntu:20.04 AS system-build
+# Build env prep stage
+FROM ubuntu:20.04 AS build-deps
 
 # Prepare environment and install prereqs
 ARG DEBIAN_FRONTEND=noninteractive
@@ -70,6 +70,10 @@ RUN mkdir -p /deps/torch && cd /deps/torch && \
   unzip libtorch-cxx11-abi-shared-with-deps-latest.zip && cd libtorch/ && \
   cp -R . /usr/local
 
+
+# Product code compilation stage
+FROM build-deps as build-code
+
 # copy code to container
 ADD . /code
 
@@ -96,6 +100,6 @@ RUN apt -o Acquire::AllowInsecureRepositories=true \
 RUN apt-get --allow-unauthenticated install -y \
   libssl1.1 libcurl4 libtbb2 libarchive13 locales
 RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
-COPY --from=system-build /app /app
-COPY --from=system-build /deps/torch/libtorch /usr/local
+COPY --from=build-code /app /app
+COPY --from=build-code /deps/torch/libtorch /usr/local
 ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "rpc"]
