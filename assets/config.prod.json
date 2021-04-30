@@ -1,0 +1,240 @@
+{
+    "rpc": {
+        "address": "0.0.0.0",
+        "port": 5001
+    },
+    "aws": {
+        "region": "eu-central-1",
+        "tables": {
+            "trips": "prod-trips",
+            "accounts": "prod-accounts",
+            "locations": "prod-locations"
+        },
+        "queues": {
+            "pending_routes": "https://sqs.eu-central-1.amazonaws.com/253640270832/prod-routes-pending"
+        },
+        "log_level": "warn"
+    },
+    "routing": {
+        "algorithm": "ch",
+        "max_waypoints": 300,
+        "async_threshold": 20,
+        "worker_concurrency": 2
+    },
+    "geocoder": {
+        "mode": "sqlite_fts"
+    },
+    "authentication": {
+        "secret": "Oi8LC0O9lSt2UIPhodylwZrgSc0SIbYwV7UMLBA6",
+        "token_ttl": "86400"
+    },
+    "regions": [{
+            "enabled": true,
+            "name": "województwo dolnośląskie",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/dolnoslaskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/dolnoslaskie.db"
+            },
+            "poly": "s3://trasa.map-derivatives/poly/poland/dolnoslaskie.poly",
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/dolnoslaskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/dolnoslaskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo kujawsko-pomorskie",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/kujawsko-pomorskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/kujawsko-pomorskie.db"
+            },
+            "poly": "s3://trasa.map-derivatives/poly/poland/kujawsko-pomorskie.poly",
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/kujawsko-pomorskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/kujawsko-pomorskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo łódzkie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/lodzkie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/lodzkie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/lodzkie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/lodzkie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/lodzkie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo lubelskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/lubelskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/lubelskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/lubelskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/lubelskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/lubelskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo lubuskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/lubuskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/lubuskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/lubuskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/lubuskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/lubuskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo małopolskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/malopolskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/malopolskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/malopolskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/malopolskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/malopolskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo mazowieckie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/mazowieckie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/mazowieckie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/mazowieckie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/mazowieckie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/mazowieckie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo opolskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/opolskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/opolskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/opolskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/opolskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/opolskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo podkarpackie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/podkarpackie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/podkarpackie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/podkarpackie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/podkarpackie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/podkarpackie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo podlaskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/podlaskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/podlaskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/podlaskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/podlaskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/podlaskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo pomorskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/pomorskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/pomorskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/pomorskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/pomorskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/pomorskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo śląskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/slaskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/slaskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/slaskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/slaskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/slaskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo świętokrzyskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/swietokrzyskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/swietokrzyskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/swietokrzyskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/swietokrzyskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/swietokrzyskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo warmińsko-mazurskie",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/warminsko-mazurskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/warminsko-mazurskie.db"
+            },
+            "poly": "s3://trasa.map-derivatives/poly/poland/warminsko-mazurskie.poly",
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/warminsko-mazurskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/warminsko-mazurskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo wielkopolskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/wielkopolskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/wielkopolskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/wielkopolskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/wielkopolskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/wielkopolskie.osrm.tar.bz2"
+            }
+        },
+        {
+            "enabled": true,
+            "name": "województwo zachodniopomorskie",
+            "poly": "s3://trasa.map-derivatives/poly/poland/zachodniopomorskie.poly",
+            "addressbook": {
+                "prefix_tree": "s3://trasa.map-derivatives/addressbook/csv/poland/zachodniopomorskie.csv",
+                "sqlite_fts": "s3://trasa.map-derivatives/addressbook/sqlite/poland/zachodniopomorskie.db"
+            },
+            "osrm": {
+                "ch": "s3://trasa.map-derivatives/osrm/ch/poland/zachodniopomorskie.osrm.tar.bz2",
+                "mld": "s3://trasa.map-derivatives/osrm/mld/poland/zachodniopomorskie.osrm.tar.bz2"
+            }
+        }
+    ]
+}

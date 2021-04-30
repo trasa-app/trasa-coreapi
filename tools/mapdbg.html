@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>Sentio Map Debugger</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    crossorigin=""></script>
+  <script type="text/javascript" src="https://rawgit.com/jieter/Leaflet.encoded/master/Polyline.encoded.js"></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+  <script src="https://unpkg.com/mapbox-gl-leaflet/leaflet-mapbox-gl.js"></script>
+
+  <style>
+    img.huechange {
+      filter: hue-rotate(120deg);
+    }
+
+    #map-container {
+      height: 100vh;
+      width: 100vw;
+      background: #c4ba85;
+    }
+
+    .half-height {
+      height: 40vh;
+    }
+
+    .monotext {
+      font-family: monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="outmost" class="container-fluid">
+    <div class="row">
+      <div class="col">
+        <h4>
+          <strong>sentio </strong>
+          <span class="text-muted">map debugger</span>
+        </h4>
+        <div>
+          <div>
+            <textarea class="form-control w-100 monotext" id="waypoints-txt" rows="20"
+              placeholder="Paste your list of waypoints here"></textarea>
+          </div>
+          <div>
+            <button type="button" class="btn btn-dark btn-lg btn-block" onclick="javascript:plotWaypoints();">
+              Plot Waypoints
+            </button>
+          </div>
+        </div>
+        <hr />
+        <div>
+          <div>
+            <textarea class="form-control w-100 monotext" id="route-txt" rows="20"
+              placeholder="Paste your computed route here"></textarea>
+          </div>
+          <div>
+            <button type="button" class="btn btn-dark btn-lg btn-block" onclick="javascript:plotRoute();">
+              Plot Route
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-9">
+        <div id="map-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const zoomLevel = 17;
+    var markerLayer = null;
+    const mymap = L.map('map-container').setView([53.135278, 23.145556], zoomLevel);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        console.log("current location ", position);
+        const latlong = [position.coords.latitude, position.coords.longitude];
+        const tilesvr = 'https://{s}.osm.rrze.fau.de/osmhd/{z}/{x}/{y}.png';
+        //const tilesvr = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        //const tilesvr = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+        //const tilesvr = 'http://tile.stamen.com/watercolor/{z}/{x}/{y}.jpg';
+        //const tilesvr = 'http://tile.stamen.com/toner/{z}/{x}/{y}.png';
+
+        const mapboxTilesSvr = 'https://maps.geoapify.com/v1/styles/osm-bright-grey/style.json?apiKey=85a83a32840c4e6f9520f096c74af114';
+        //const mapboxTilesSvr = 'https://maps.geoapify.com/v1/styles/osm-bright-smooth/style.json?apiKey=85a83a32840c4e6f9520f096c74af114';
+        //const mapboxTilesSvr = 'https://maps.geoapify.com/v1/styles/osm-bright-grey/style.json?apiKey=85a83a32840c4e6f9520f096c74af114';
+        //const mapboxTilesSvr = 'https://maps.geoapify.com/v1/styles/dark-matter-brown/style.json?apiKey=85a83a32840c4e6f9520f096c74af114';
+        mymap.setView(latlong, zoomLevel);
+        // L.tileLayer(tilesvr, {
+        //   attribution: '<strong>Sentio</strong> Map Debugger'
+        // }).addTo(mymap);
+        L.mapboxGL({
+          style: mapboxTilesSvr,
+          accessToken: 'no-token'
+        }).addTo(mymap);
+        L.control.scale().addTo(mymap);
+        L.marker(latlong).bindPopup('Current Location').addTo(mymap);
+      });
+    }
+
+    function plotWaypoints() {
+      if (markerLayer !== null) {
+        L.clearLayers();
+      }
+      const lines = document.getElementById('waypoints-txt').value.split(/\r?\n/);
+      let visibleWaypoints = lines.map(line => line.split(','));
+      console.log("visibleWaypoints", visibleWaypoints);
+      for (latlon of visibleWaypoints) {
+        console.log(latlon);
+        L.marker(latlon).addTo(mymap);
+      }
+    }
+
+    function plotRoute() {
+      const encodedRoute = document.getElementById("route-txt").value.replace('\\\\', '\\');
+      console.log("encodedRoute", encodedRoute);
+      L.Polyline.fromEncoded(encodedRoute, {
+        color: 'blue',
+        weight: 2
+      }).addTo(mymap);
+      // const coordinates = L.Polyline.fromEncoded(encodedRoute).getLatLngs();
+      // console.log("coordinates", coordinates);
+      // L.Polyline(coordinates, {
+      //   color: 'blue',
+      //   weight: 2,
+      //   opacity: 0.7,
+      //   lineJoin: 'round'
+      // }).addTo(mymap);
+    }
+
+    // L.marker([51.5, -0.09]).addTo(mymap);
+
+    // L.circle([51.508, -0.11], {
+    //   color: 'red',
+    //   fillColor: '#f03',
+    //   fillOpacity: 0.5,
+    //   radius: 500
+    // }).addTo(mymap);
+
+    // L.polygon([
+    //   [51.509, -0.08],
+    //   [51.503, -0.06],
+    //   [51.51, -0.047]
+    // ]).addTo(mymap);
+  </script>
+
+</body>
+
+</html>
