@@ -1,0 +1,13 @@
+# Copyright (C) Karim Agha - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
+
+on: [push]
+jobs:
+  compile_and_link_job:
+    runs-on: ubuntu-20.04
+    name: Compile & Link
+    steps:
+      - name: compile and link step
+        id: build
+        uses: ./
