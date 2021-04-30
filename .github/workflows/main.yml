@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
-name: Build
+name: Build and package backend
 
 on:
   push:
@@ -14,7 +14,6 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout sources
+      - name: Checkout and build sources 
         uses: actions/checkout@v2
-      - name: Build server executable
-        uses: ./
+        run: docker build . --target system-build
