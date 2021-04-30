@@ -12,5 +12,5 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
-      - name: Compile & Link Step
+      - name: Compile server executable
         uses: ./
