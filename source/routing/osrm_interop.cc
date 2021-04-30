@@ -210,24 +210,35 @@ public:
     spacial::coordinates const& to) const
   {
     osrm::RouteParameters rparams;
+    
     rparams.coordinates.push_back({
-      osrm::util::FloatLongitude(from.longitude()),
-      osrm::util::FloatLatitude(from.latitude())});
+      osrm::util::FloatLongitude { from.longitude() },
+      osrm::util::FloatLatitude { from.latitude()  }
+    });
+
     rparams.coordinates.push_back({
-      osrm::util::FloatLongitude(to.longitude()),
-      osrm::util::FloatLatitude(to.latitude())});
+      osrm::util::FloatLongitude { to.longitude() },
+      osrm::util::FloatLatitude { to.latitude() }
+    });
     
     osrm::engine::api::ResultT result = osrm::json::Object();
     const auto status = engineinstance_.Route(rparams, result);
     if (status == osrm::Status::Ok) {
+      
       auto& route = result.get<osrm::json::Object>()
         .values["routes"].get<osrm::json::Array>()
         .values.at(0).get<osrm::json::Object>();
-      auto duration = static_cast<size_t>(
-        route.values["duration"].get<osrm::json::Number>().value);
+
+      auto duration = std::chrono::seconds(
+        static_cast<size_t>(
+          route.values["duration"].get<osrm::json::Number>().value));
+
+      auto distance = static_cast<int>(
+            route.values["distance"].get<osrm::json::Number>().value);
+
       return travel_cost {
-        .distance = route.values["distance"].get<osrm::json::Number>().value,
-        .duration = std::chrono::seconds(duration)
+        .distance = distance,
+        .duration = duration
       };
     } else {
       throw std::runtime_error("routing failed");

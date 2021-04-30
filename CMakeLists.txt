@@ -28,7 +28,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Environment & CMAKE options
 #----------------------------
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -142,9 +142,6 @@ add_library(trasa
   source/geocoder/geocoder.cc
   source/geocoder/ner/geomodel.cc
   source/geocoder/sqlite_fts/sqlite_fts.cc
-  source/geocoder/prefix_tree/region.cc
-  source/geocoder/prefix_tree/street.cc
-  source/geocoder/prefix_tree/prefix_tree.cc
 
   source/tracking/event.cc
 

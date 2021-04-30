@@ -71,14 +71,14 @@ json_t trip_service::poll::invoke(json_t params, rpc::context ctx) const
   }
 
   auto const& item = giresponse.GetResult().GetItem();
-  if (!item.contains("accountid")) {
+  if (item.find("accountid") == item.end()) {
     std::cerr << "trip.poll failed for tripid " << tripid.value() 
               << " because it doesn't have an accountid associated"
               << std::endl;
     throw rpc::server_error();
   }
 
-  if (!item.contains("status")) {
+  if (item.find("status") == item.end()) {
     std::cerr << "trip.poll failed for tripid " << tripid.value() 
               << " because it doesn't have a valid status value"
               << std::endl;

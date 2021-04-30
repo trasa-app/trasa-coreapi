@@ -19,7 +19,6 @@
 #include "geocoder.h"
 #include "ner/geomodel.h"
 #include "sqlite_fts/sqlite_fts.h"
-#include "prefix_tree/prefix_tree.h"
 
 namespace sentio::geocoder
 {

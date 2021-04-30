@@ -5,7 +5,6 @@
 #include "geocoder.h"
 #include "geocoder/geocoder.h"
 #include "geocoder/sqlite_fts/sqlite_fts.h"
-#include "geocoder/prefix_tree/prefix_tree.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -138,8 +137,6 @@ static geocoder::geocoder create_backend(
 {
   if (boost::iequals("sqlite_fts", mode)) {
     return sentio::geocoder::geocoder::create<geocoder::sqlite_backend>(worldix, sources);
-  } else if (boost::iequals("prefix_tree", mode)) {
-    return sentio::geocoder::geocoder::create<geocoder::prefix_tree_backend>(worldix, sources);
   } else {
     throw std::invalid_argument("unrecognized geocoder mode");
   }
