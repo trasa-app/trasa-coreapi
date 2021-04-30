@@ -4,12 +4,7 @@
 
 name: Build and package backend
 
-on:
-  push:
-    branches: [ $default-branch ]
-  pull_request:
-    branches: [ $default-branch ]
-
+on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-20.04
