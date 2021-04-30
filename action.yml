@@ -2,8 +2,11 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
-name: Compile & Link
-description: Runs CMake build and checks if the code still builds
+name: Build Trasa Server
+description: Runs docker build and checks if the code builds
 runs:
   using: docker
   image: Dockerfile
+  entrypoint: echo
+  args:
+  - ok
