@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y \
 # install libosrm libraries and headers on build machine
 RUN mkdir -p /deps && cd /deps && \
   git clone --single-branch --depth 1 --progress --verbose \
-  https://github.com/Project-OSRM/osrm-backend.git --branch=v5.23.0 && \
+  https://github.com/Project-OSRM/osrm-backend.git --branch=v5.24.0 && \
   cd osrm-backend && mkdir build && cd build && \
   BUILD_TYPE=Release \
   ENABLE_ASSERTIONS=OFF \ 
