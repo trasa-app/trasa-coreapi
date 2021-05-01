@@ -24,5 +24,5 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:$GITHUB_RUN_ID
+            ghcr.io/${{ github.repository }}:${{ github.job }}
             ghcr.io/${{ github.repository }}:latest
