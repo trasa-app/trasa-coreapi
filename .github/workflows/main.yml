@@ -7,7 +7,7 @@ name: Build and package backend
 on: [push, pull_request]
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, ubuntu-latest]
     steps:
       - name: Checkout Sources 
         uses: actions/checkout@v2
