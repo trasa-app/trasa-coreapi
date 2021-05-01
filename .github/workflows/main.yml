@@ -9,12 +9,20 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout sources 
+      - name: Checkout Sources 
         uses: actions/checkout@v2
-      - name: Build executables
+      - name: Build Executables
         run: docker build . --target build-code
-      - name: Build and push image
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_REGISTRY_TOKEN }}
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: trasa-app/backend:latest
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref }}
+            ghcr.io/${{ github.repository }}:latest
