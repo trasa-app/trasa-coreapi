@@ -81,15 +81,15 @@ std::thread start_rpc_server(
     
     sentio::rpc::service_map_t svcmap;
     
-    svcmap.emplace("trip.poll",   
-      create_service(trip_service::poll(
-        systemconfig.get_child("routing"), worldix)));
+    // svcmap.emplace("trip.poll",   
+    //   create_service(trip_service::poll(
+    //     systemconfig.get_child("routing"), worldix)));
 
-    svcmap.emplace("trip.async",
-      create_service(trip_service::async(
-        systemconfig.get_child("routing"), worldix)));
+    // svcmap.emplace("trip.async",
+    //   create_service(trip_service::async(
+    //     systemconfig.get_child("routing"), worldix)));
 
-    svcmap.emplace("trip.sync",
+    svcmap.emplace("trip",
       create_service(trip_service::sync(
         systemconfig.get_child("routing"), worldix, sources)));
 
@@ -97,9 +97,9 @@ std::thread start_rpc_server(
       create_service(geocoder_service(worldix, sources,
         systemconfig.get_child("geocoder"))));
 
-    svcmap.emplace("distance", 
-      create_service(distance_service(
-        systemconfig.get_child("routing"), worldix, sources)));
+    // svcmap.emplace("distance", 
+    //   create_service(distance_service(
+    //     systemconfig.get_child("routing"), worldix, sources)));
 
     // this blocks the current thread until the server terminates
     sentio::rpc::run_server(std::move(rpcconfig), std::move(svcmap));

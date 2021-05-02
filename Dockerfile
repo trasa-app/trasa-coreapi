@@ -100,6 +100,7 @@ RUN apt -o Acquire::AllowInsecureRepositories=true \
 RUN apt-get --allow-unauthenticated install -y \
   libssl1.1 libcurl4 libtbb2 libarchive13 locales
 RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
+RUN ulimit -n 999999
 COPY --from=build-code /app /app
 COPY --from=build-code /deps/torch/libtorch /usr/local
 ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "rpc"]
