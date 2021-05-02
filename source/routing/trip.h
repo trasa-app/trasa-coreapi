@@ -8,6 +8,7 @@
 #include <string>
 #include <chrono>
 #include <utility>
+#include <optional>
 
 #include <boost/units/systems/si.hpp>
 

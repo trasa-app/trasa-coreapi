@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/property_tree/ptree.hpp>
 

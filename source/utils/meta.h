@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <functional>
 #include <boost/optional.hpp>
 
