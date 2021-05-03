@@ -89,6 +89,7 @@ add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 add_definitions(-DBOOST_THREAD_PROVIDES_FUTURE)
 add_definitions(-DBOOST_THREAD_PROVIDES_FUTURE_CONTINUATION)
 add_definitions(-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED)
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 # end of various hacks and workarounds...
 
 #--------------------

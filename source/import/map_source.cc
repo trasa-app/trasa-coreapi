@@ -11,8 +11,12 @@
 
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
+#include <aws/s3/model/HeadObjectRequest.h>
+
+#include <openssl/md5.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/hex.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -104,7 +108,7 @@ private:
   protocol protocol_;
 };
 
-Aws::S3::Model::GetObjectRequest make_s3_request(std::string s3url)
+Aws::S3::Model::GetObjectRequest make_s3_content_request(std::string s3url)
 {
   uri s3path(std::move(s3url));
   assert(s3path.proto() == uri::protocol::s3);
@@ -114,19 +118,97 @@ Aws::S3::Model::GetObjectRequest make_s3_request(std::string s3url)
   return request;
 }
 
+Aws::S3::Model::HeadObjectRequest make_s3_metadata_request(std::string s3url)
+{
+  uri s3path(std::move(s3url));
+  assert(s3path.proto() == uri::protocol::s3);
+  Aws::S3::Model::HeadObjectRequest request;
+  request.SetBucket(s3path.host());
+  request.SetKey(s3path.path());
+  return request;
+}
+
+std::filesystem::path local_object_path(Aws::S3::Model::GetObjectRequest const& req)
+{
+  // ask the operating system to provide a temp directory.
+  // we don't really care about the actual storage path, as long
+  // as the data file is accessible on the filesystem from this
+  // process. One less value to configure.
+  auto tempdir = std::filesystem::temp_directory_path();
+  auto fname = std::filesystem::path(req.GetKey()).filename();
+  auto destpath = tempdir / fname;
+  return destpath;
+}
+
+std::optional<std::string> local_object_digest(Aws::S3::Model::GetObjectRequest const& req)
+{
+  auto localpath = local_object_path(req);
+  if (std::filesystem::exists(localpath)) {
+    const size_t chunk_size = 8 * 1024 * 1024;
+    std::unique_ptr<char[]> buffer(new char[chunk_size]);
+    std::ifstream readf(localpath, std::ios::binary);
+    std::vector<std::array<unsigned char, MD5_DIGEST_LENGTH>> chunks_hashes;
+
+    while (readf.good()) {
+      MD5_CTX md5ctx;
+      MD5_Init(&md5ctx);
+      std::array<unsigned char, MD5_DIGEST_LENGTH> digest;
+      readf.read(buffer.get(), chunk_size);
+      MD5_Update(&md5ctx, buffer.get(), readf.gcount());
+      MD5_Final(digest.data(), &md5ctx);
+      chunks_hashes.push_back(digest);
+    }
+
+    auto pretty_digest = [](auto digest) {
+      std::string output;
+      const auto char_digest = reinterpret_cast<const char*>(&digest);
+      const auto char_digest_size = sizeof(digest);
+      boost::algorithm::hex_lower(
+        char_digest, 
+        char_digest + char_digest_size,
+        std::back_inserter(output));
+      return output;
+    };
+
+    if (chunks_hashes.size() > 1) {
+      MD5_CTX md5ctx;
+      MD5_Init(&md5ctx);
+      for (auto const& chunk: chunks_hashes) {
+        MD5_Update(&md5ctx, chunk.data(), chunk.size());
+      }
+
+      std::array<unsigned char, MD5_DIGEST_LENGTH> digest;
+      MD5_Final(digest.data(), &md5ctx);
+      return (pretty_digest(digest) + "-" + std::to_string(chunks_hashes.size()));
+    } else {
+      return pretty_digest(chunks_hashes.front());
+    }
+  }
+  return {};
+}
+
 std::future<std::string> save_s3_object_async(Aws::S3::S3Client const& s3client,
                                               std::string const& s3uri)
 {
   return std::async([&s3client, &s3uri]() {
-    auto request = make_s3_request(s3uri);
+    auto request = make_s3_content_request(s3uri);
+    
+    auto meta_request = make_s3_metadata_request(s3uri);
+    auto metadata_response = s3client.HeadObject(meta_request);
 
-    // ask the operating system to provide a temp directory.
-    // we don't really care about the actual storage path, as long
-    // as the data file is accessible on the filesystem from this
-    // process. One less value to configure.
-    auto tempdir = std::filesystem::temp_directory_path();
-    auto fname = std::filesystem::path(request.GetKey()).filename();
-    auto destpath = tempdir / fname;
+    auto destpath = local_object_path(request);
+    auto localdigest = local_object_digest(request);
+    auto remotedigest = std::string_view(
+      &metadata_response.GetResult().GetETag()[1], 
+      metadata_response.GetResult().GetETag().size() - 2);
+
+    if (localdigest.has_value()) {
+      if (localdigest.value() == remotedigest) {
+        std::clog << "using cached version of " << s3uri << " @ " << destpath 
+                  << " [" << localdigest.value() << "]" << std::endl;
+        return destpath.string();
+      }
+    }
 
     // we're setting the stream factory to a file stream because otherwise
     // the contents of the S3 Object will be stored in memory. This will
