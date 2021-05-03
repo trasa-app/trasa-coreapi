@@ -26,9 +26,10 @@
 #include "utils/timestampss.h"
 
 enum exec_role {
+  none    = 0x00,
   rpc     = 0x01, 
   worker  = 0x02, 
-  both = rpc | worker
+  both = rpc | worker,
 };
 
 auto download_regions(std::vector<sentio::import::region_paths> const& sources)
@@ -55,6 +56,8 @@ exec_role read_role(int argc, const char** argv)
       return exec_role::worker;
     } else if (boost::iequals(argv[2], "both")) {
       return exec_role::both;
+    } else if (boost::iequals(argv[2], "none")) {
+      return exec_role::none;
     } else {
       throw std::invalid_argument(
         "unrecognized role (expected rpc, worker or both)");

@@ -140,6 +140,13 @@ std::filesystem::path local_object_path(Aws::S3::Model::GetObjectRequest const& 
   return destpath;
 }
 
+/**
+ * Checks if the remote s3 object is already downloaded locally from previous runs, and
+ * if the md5 hash of the local file equals to the etag of the remote. If yes, then the
+ * cached version is used instead and downloads is skipped. Note that the etag checksum 
+ * algorithm for large files uploaded through multipart upload works on chunks, not on the
+ * entire file. For more info search for "AWS S3 etag checksum multipart".
+ */
 std::optional<std::string> local_object_digest(Aws::S3::Model::GetObjectRequest const& req)
 {
   auto localpath = local_object_path(req);
@@ -149,6 +156,7 @@ std::optional<std::string> local_object_digest(Aws::S3::Model::GetObjectRequest 
     std::ifstream readf(localpath, std::ios::binary);
     std::vector<std::array<unsigned char, MD5_DIGEST_LENGTH>> chunks_hashes;
 
+    // for each chunk calculate a separate md5 checksum
     while (readf.good()) {
       MD5_CTX md5ctx;
       MD5_Init(&md5ctx);
@@ -159,6 +167,7 @@ std::optional<std::string> local_object_digest(Aws::S3::Model::GetObjectRequest 
       chunks_hashes.push_back(digest);
     }
 
+    // md5 byte to lowercase hex string
     auto pretty_digest = [](auto digest) {
       std::string output;
       const auto char_digest = reinterpret_cast<const char*>(&digest);
@@ -170,6 +179,7 @@ std::optional<std::string> local_object_digest(Aws::S3::Model::GetObjectRequest 
       return output;
     };
 
+    // compound / large file etag checksum
     if (chunks_hashes.size() > 1) {
       MD5_CTX md5ctx;
       MD5_Init(&md5ctx);
@@ -181,6 +191,7 @@ std::optional<std::string> local_object_digest(Aws::S3::Model::GetObjectRequest 
       MD5_Final(digest.data(), &md5ctx);
       return (pretty_digest(digest) + "-" + std::to_string(chunks_hashes.size()));
     } else {
+      // small file checksum
       return pretty_digest(chunks_hashes.front());
     }
   }
@@ -193,14 +204,18 @@ std::future<std::string> save_s3_object_async(Aws::S3::S3Client const& s3client,
   return std::async([&s3client, &s3uri]() {
     auto request = make_s3_content_request(s3uri);
     
-    auto meta_request = make_s3_metadata_request(s3uri);
-    auto metadata_response = s3client.HeadObject(meta_request);
+    // retreive remote object etag only without content
+    auto metadata = s3client.HeadObject(
+      make_s3_metadata_request(s3uri));
 
+    // calculate md5 checksum of the local file
     auto destpath = local_object_path(request);
     auto localdigest = local_object_digest(request);
+
+    // remove quotes from AWS response string
     auto remotedigest = std::string_view(
-      &metadata_response.GetResult().GetETag()[1], 
-      metadata_response.GetResult().GetETag().size() - 2);
+      &metadata.GetResult().GetETag()[1], 
+      metadata.GetResult().GetETag().size() - 2);
 
     if (localdigest.has_value()) {
       if (localdigest.value() == remotedigest) {

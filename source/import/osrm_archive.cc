@@ -2,11 +2,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
+#include <chrono>
 #include <string>
 #include <iostream>
 #include <execution>
 #include <filesystem>
 #include <algorithm>
+#include <iomanip>
 
 #include <zlib.h>
 #include <archive.h>
@@ -24,7 +26,7 @@ private:
   
   static inline int ensure_ok(int retval)
   {
-    if (retval == ARCHIVE_FAILED ||  retval == ARCHIVE_FATAL) {
+    if (retval == ARCHIVE_FAILED || retval == ARCHIVE_FATAL) {
       throw std::runtime_error("libarchive error: " + std::to_string(retval));
     }
     return retval;
@@ -54,6 +56,26 @@ public:
 
       std::filesystem::path entrypath(archive_entry_pathname(entry));
       entrypath = path_.parent_path() / entrypath;
+
+      // check if already extracted by previous runs:
+      if (std::filesystem::exists(entrypath)) {
+        // get modification times:      
+        auto arch_mtime = archive_entry_mtime(entry);
+        auto local_mtime = std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::file_clock::to_sys(
+            std::filesystem::last_write_time(entrypath))
+              .time_since_epoch()).count();
+        
+        // get sizes:
+        auto arch_size = static_cast<size_t>(archive_entry_size(entry));
+        auto local_size = std::filesystem::file_size(entrypath);
+
+        // if already extracted, skip:
+        if (arch_mtime == local_mtime && arch_size == local_size) {
+          return (*this);
+        }
+      }
+
       archive_entry_set_pathname(entry, entrypath.c_str());
       archive_entry_set_perm(entry, 0666);
       ensure_ok(retval);

@@ -88,12 +88,12 @@ RUN mkdir -p /app && \
   cp /code/build/product/config.dev.json /app/config.dev.json
 
 
-# Production stage
+# Data Import stage
 
 # stripped of source code and all libraries needed for building the
-# server code.
+# server code. Predownload map data locally to microservice image.
 
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS import-data
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt -o Acquire::AllowInsecureRepositories=true \
   -o Acquire::AllowDowngradeToInsecureRepositories=true update
@@ -103,4 +103,9 @@ RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
 RUN ulimit -n 999999
 COPY --from=build-code /app /app
 COPY --from=build-code /deps/torch/libtorch /usr/local
+ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "none"]
+
+
+# Production stage - rpc role only
+FROM import-data
 ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "rpc"]
