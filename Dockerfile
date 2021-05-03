@@ -95,6 +95,7 @@ RUN mkdir -p /app && \
 
 FROM ubuntu:20.04 AS import-data
 ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt -o Acquire::AllowInsecureRepositories=true \
   -o Acquire::AllowDowngradeToInsecureRepositories=true update
 RUN apt-get --allow-unauthenticated install -y \
@@ -103,9 +104,10 @@ RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
 RUN ulimit -n 999999
 COPY --from=build-code /app /app
 COPY --from=build-code /deps/torch/libtorch /usr/local
-ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "none"]
+RUN /app/turbo_server /app/config.prod.json none
 
 
 # Production stage - rpc role only
 FROM import-data
+
 ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "rpc"]
