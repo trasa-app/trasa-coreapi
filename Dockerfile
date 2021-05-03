@@ -95,7 +95,7 @@ RUN mkdir -p /app && \
 
 FROM ubuntu:20.04 AS import-data
 ARG DEBIAN_FRONTEND=noninteractive
-
+ADD ~/.aws /root/.aws
 RUN apt -o Acquire::AllowInsecureRepositories=true \
   -o Acquire::AllowDowngradeToInsecureRepositories=true update
 RUN apt-get --allow-unauthenticated install -y \
