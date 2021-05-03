@@ -282,7 +282,15 @@ std::vector<region_paths> region_paths::from_config(
 std::future<region_paths> region_paths::download_async(
   region_paths const& rp)
 {
+  static std::once_flag once;
   static Aws::S3::S3Client s3client;
+
+  std::call_once(once, []() {
+    Aws::Client::ClientConfiguration cfg;
+    cfg.region = Aws::Region::EU_CENTRAL_1;
+    s3client = Aws::S3::S3Client(cfg);
+  });
+
   std::clog << "starting region data download for " << rp.name << std::endl;
   return std::async([rp = std::move(rp)]() {
     auto ab_path = save_s3_object_async(s3client, rp.addressbook);
