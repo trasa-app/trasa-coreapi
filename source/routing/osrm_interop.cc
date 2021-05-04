@@ -3,6 +3,8 @@
 // Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
 #include <iostream>
+#include <execution>
+#include <algorithm>
 #include <unordered_map>
 
 #include <osrm/osrm.hpp>
@@ -13,54 +15,50 @@
 #include "worker.h"
 #include "waypoint.h"
 #include "osrm_interop.h"
+#include "utils/log.h"
 
 void debug_trip(osrm::json::Object& trip, size_t i)
 {
   auto& legs = trip.values["legs"].get<osrm::json::Array>().values;
-  std::clog << "trips[" << i << "].legs.count = " << legs.size() << std::endl;
+  infolog << "trips[" << i << "].legs.count = " << legs.size();
 
   for (size_t j = 0; j < legs.size(); ++j) {
     auto leg = legs.at(j).get<osrm::json::Object>();
     auto& distance = leg.values["distance"].get<osrm::json::Number>().value;
     auto& duration = leg.values["duration"].get<osrm::json::Number>().value;
     
-    std::clog << "trips[" << i << "].legs[" << j << "].distance = " << distance << std::endl;
-    std::clog << "trips[" << i << "].legs[" << j << "].duration = " << duration << std::endl;
-    std::clog << std::endl;
+    infolog << "trips[" << i << "].legs[" << j << "].distance = " << distance;
+    infolog << "trips[" << i << "].legs[" << j << "].duration = " << duration;
   }
 }
 
 void debug_waypoint(osrm::json::Object& waypoint, size_t i)
 {
   auto& name = waypoint.values["name"].get<osrm::json::String>().value;
-  std::clog << "waypoint[" << i << "].name = " << name << std::endl;
+  tracelog << "waypoint[" << i << "].name = " << name;
 
   auto& tripix = waypoint.values["trips_index"].get<osrm::json::Number>().value;
-  std::clog << "waypoint[" << i << "].trips_index = " << tripix << std::endl;
+  tracelog << "waypoint[" << i << "].trips_index = " << tripix;
 
   auto& waypointix = waypoint.values["waypoint_index"].get<osrm::json::Number>().value;
-  std::clog << "waypoint[" << i << "].waypoint_index = " << waypointix << std::endl;
-  
-  std::clog << std::endl;
+  tracelog << "waypoint[" << i << "].waypoint_index = " << waypointix;
 }
 
 void debug_output(osrm::json::Object& json_result)
 {
   auto& code = json_result.values["code"].get<osrm::json::String>().value;
-  std::clog << "status code: " << code << std::endl;
+  tracelog << "status code: " << code;
 
   auto& waypoints = json_result.values["waypoints"].get<osrm::json::Array>().values;
-  std::clog << "waypoints.count = " << waypoints.size() << std::endl;
+  tracelog << "waypoints.count = " << waypoints.size();
 
   for (size_t i = 0; i < waypoints.size(); ++i) {
     auto& waypoint = waypoints.at(i).get<osrm::json::Object>();
     debug_waypoint(waypoint, i);
   }
 
-  std::clog << std::endl;
-
   auto& trips = json_result.values["trips"].get<osrm::json::Array>().values;
-  std::clog << "trips.count = " << trips.size() << std::endl;
+  tracelog << "trips.count = " << trips.size();
 
   for (size_t i = 0; i < trips.size(); ++i) {
     auto& trip = trips.at(i).get<osrm::json::Object>();
@@ -86,9 +84,9 @@ public:
         .dataset_name = source.name}
     , engineinstance_(engconfig_) 
     {
-      std::clog << "created routing engine instance for " 
-                << source.name << " using index: "
-                << source.osrm << std::endl;
+      dbglog << "created routing engine instance for " 
+            << source.name << " using index: "
+            << source.osrm;
     }
 
 public:
@@ -191,7 +189,7 @@ public:
     auto const& returncode = json_result.values["code"].get<osrm::json::String>().value;
     if (status == osrm::Status::Ok && boost::iequals(returncode, "ok")) {
       auto waypointsorder = map_waypoints_order(json_result);
-      std::cout << "trip_size_3: " << trip.size() << std::endl;
+      dbglog << "trip_size_3: " << trip.size();
       return optimized_trip(
         trip, waypointsorder,
         map_legs(json_result),
@@ -199,8 +197,8 @@ public:
     } else {
       const auto code = json_result.values["code"].get<osrm::json::String>().value;
       const auto message = json_result.values["message"].get<osrm::json::String>().value;
-      std::cerr << "trip optimization failed. code: "  
-                << code << ", message: " << message << std::endl;
+      errlog << "trip optimization failed. code: "  
+                << code << ", message: " << message;
       throw std::runtime_error(message);
     }
   }
@@ -268,17 +266,21 @@ class osrm_map::impl {
 public:
   impl(config const& config, std::vector<import::region_paths> const& sources)
   {
-    for (auto const& source: sources) {
-      try {
-        instances_.emplace(source.name, 
-          osrm_instance(config, source));
-      } catch (std::exception const& e) {
-        std::clog << "failed to create routing engine instance for "
-                << source.name << " using index: " << source.osrm 
-                << ". reason: " << e.what() << std::endl;
-        throw;
-      }
-    }
+    std::mutex instsync;
+    std::for_each(
+      sources.begin(), sources.end(),
+      [this, &config, &instsync](auto const& source) {
+        try {
+          auto instance = osrm_instance(config, source);
+          std::lock_guard g(instsync);
+          instances_.emplace(source.name, std::move(instance));
+        } catch (std::exception const& e) {
+          errlog << "failed to create routing engine instance for "
+                 << source.name << " using index: " << source.osrm 
+                 << ". reason: " << e.what();
+          throw;
+        }
+      });
   }
 
 public:

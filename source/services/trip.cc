@@ -15,6 +15,7 @@
 #include "trip.h"
 #include "rpc/error.h"
 #include "routing/trip.h"
+#include "utils/log.h"
 #include "utils/aws.h"
 #include "utils/datetime.h"
 #include "spacial/coords.h"
@@ -25,8 +26,8 @@ namespace sentio::services
 static std::string random_string(size_t len)
 {
   static std::string chars(
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    "abcdefghjkmnpqrstuvwxyz"
+    "ABCDEFGHJKMNPQRSTUVWXYZ");
   static std::random_device rd;
   static std::mt19937 mt(rd());
 
@@ -55,9 +56,9 @@ json_t trip_service::poll::invoke(json_t params, rpc::context ctx) const
   auto giresponse = dbclient.GetItem(girequest);
 
   if (!giresponse.IsSuccess()) {
-    std::cerr << "trip.poll failed for tripid " << tripid.value() 
+    errlog << "trip.poll failed for tripid " << tripid.value() 
               << " with error: " << giresponse.GetError().GetMessage()
-              << std::endl;
+             ;
     throw rpc::server_error();
   }
 
@@ -72,16 +73,14 @@ json_t trip_service::poll::invoke(json_t params, rpc::context ctx) const
 
   auto const& item = giresponse.GetResult().GetItem();
   if (item.find("accountid") == item.end()) {
-    std::cerr << "trip.poll failed for tripid " << tripid.value() 
-              << " because it doesn't have an accountid associated"
-              << std::endl;
+    errlog << "trip.poll failed for tripid " << tripid.value() 
+           << " because it doesn't have an accountid associated";
     throw rpc::server_error();
   }
 
   if (item.find("status") == item.end()) {
-    std::cerr << "trip.poll failed for tripid " << tripid.value() 
-              << " because it doesn't have a valid status value"
-              << std::endl;
+    errlog << "trip.poll failed for tripid " << tripid.value() 
+           << " because it doesn't have a valid status value";
   }
 
   auto const& accountidval = item.find("accountid")->second;
@@ -134,9 +133,9 @@ json_t trip_service::async::invoke(json_t params, rpc::context ctx) const
   }
 
   if (request->trip().size() > config().max_waypoints) {
-    std::cerr << "trip request contains " << request->trip().size() 
+    errlog << "trip request contains " << request->trip().size() 
               << " waypoints, configured maximum is "
-              << config().max_waypoints << ". aborting." << std::endl;
+              << config().max_waypoints << ". aborting.";
     throw std::invalid_argument("trip too large");
   }
 
@@ -147,9 +146,9 @@ json_t trip_service::async::invoke(json_t params, rpc::context ctx) const
     if (locator().locate(waypoint.building.coords) != tripregion) {
       std::stringstream ss;
       boost::property_tree::write_json(ss, waypoint.to_json());
-      std::cerr << "waypoint " << ss.str() 
-                << " is not within trip region " 
-                << tripregion->name() << std::endl;
+      errlog << "waypoint " << ss.str() 
+             << " is not within trip region " 
+             << tripregion->name();
       throw std::invalid_argument("waypoint not within region");
     }
   }
@@ -185,14 +184,14 @@ json_t trip_service::sync::invoke(json_t params, rpc::context ctx) const
     params.add("meta.region", tripregion->name());
     request.emplace(std::move(params));
   } catch (std::exception const& e) {
-    std::cerr << "trip parsing failed: " << e.what() << std::endl;
+    errlog << "trip parsing failed: " << e.what();
     throw rpc::bad_request(e.what());
   }
 
   if (request->trip().size() > config().max_waypoints) {
-    std::cerr << "trip request contains " << request->trip().size() 
+    errlog << "trip request contains " << request->trip().size() 
               << " waypoints, configured maximum is "
-              << config().max_waypoints << ". aborting." << std::endl;
+              << config().max_waypoints << ". aborting.";
     throw std::invalid_argument("trip too large");
   }
 
@@ -203,9 +202,9 @@ json_t trip_service::sync::invoke(json_t params, rpc::context ctx) const
     if (locator().locate(waypoint.building.coords) != tripregion) {
       std::stringstream ss;
       boost::property_tree::write_json(ss, waypoint.to_json());
-      std::cerr << "waypoint " << ss.str() 
+      errlog << "waypoint " << ss.str() 
                 << " is not within trip region " 
-                << tripregion->name() << std::endl;
+                << tripregion->name();
       throw std::invalid_argument("waypoint not within region");
     }
   }

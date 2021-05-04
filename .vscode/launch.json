@@ -8,15 +8,44 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/turbo_server",
+      "program": "/app/turbo_server",
       "args": [
-        "product/config.dev.json"
+        "/app/config.prod.json",
+        "rpc"
       ],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/build",
+      "cwd": "/app",
       "environment": [],
       "externalConsole": false,
       "MIMode": "gdb",
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}/build",
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "exec",
+          "-i",
+          "d8c0b088838d",
+          "sh",
+          "-c"
+        ],
+        "debuggerPath": "/usr/bin/gdb"
+      },
+      "sourceFileMap": {
+        "/code": "${workspaceRoot}"
+      },
+      "linux": {
+        "MIMode": "gdb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ]
+      },
+      "osx": {
+        "MIMode": "lldb"
+      },
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",

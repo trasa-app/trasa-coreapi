@@ -66,8 +66,8 @@ RUN mkdir -p /deps && cd /deps && \
 
 # install libtorch
 RUN mkdir -p /deps/torch && cd /deps/torch && \
-  wget -nv https://download.pytorch.org/libtorch/nightly/cpu/libtorch-cxx11-abi-shared-with-deps-latest.zip && \
-  unzip libtorch-cxx11-abi-shared-with-deps-latest.zip && cd libtorch/ && \
+  wget -nv https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-static-with-deps-1.8.1%2Bcpu.zip && \
+  unzip libtorch-cxx11-abi-static-with-deps-1.8.1+cpu.zip && cd libtorch/ && \
   cp -R . /usr/local
 
 

@@ -51,8 +51,6 @@ void init(config cfg)
   options.httpOptions.installSigPipeHandler = true;
   Aws::InitAPI(options);
 
-  
-
   g_aws_config = g_aws_config.emplace(std::move(cfg));
   g_aws_initialized = true;
 }

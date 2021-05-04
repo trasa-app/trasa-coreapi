@@ -24,7 +24,7 @@ public:
     routing::config config,
     spacial::index const& locator)
     : config_(std::move(config))
-    , locator_(locator) {}
+    , locator_(locator) { }
 
 public:
   bool authenticated() const override { return true; }

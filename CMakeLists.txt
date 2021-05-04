@@ -80,7 +80,7 @@ find_package(Boost 1.71 REQUIRED
   COMPONENTS 
       system random chrono atomic
       regex filesystem program_options 
-      iostreams thread date_time
+      iostreams thread date_time log log_setup
       unit_test_framework locale)
 
 # various hacks and workarounds...
@@ -157,8 +157,7 @@ add_library(trasa
   source/model/address.cc
 
   source/utils/aws.cc
-  source/utils/datetime.cc
-  source/utils/timestampss.cc)
+  source/utils/datetime.cc)
 
 
 #----------------
@@ -208,6 +207,7 @@ target_link_libraries(turbo_server
   ${LibArchive_LIBRARIES}
   ${Backtrace_LIBRARY} 
   ${SQLite3_LIBRARIES}
+  ${TORCH_LIBRARIES}
   ${TBB_LIBRARIES}
   ${LibOSRM_LIBRARIES}
   ${Boost_LIBRARIES})

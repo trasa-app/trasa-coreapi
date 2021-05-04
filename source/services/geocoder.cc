@@ -5,6 +5,7 @@
 #include "geocoder.h"
 #include "geocoder/geocoder.h"
 #include "geocoder/sqlite_fts/sqlite_fts.h"
+#include "utils/log.h"
 
 #include <boost/algorithm/string.hpp>
 

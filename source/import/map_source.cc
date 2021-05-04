@@ -20,6 +20,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include "utils/log.h"
 #include "map_source.h"
 #include "utils/future.h"
 
@@ -219,8 +220,8 @@ std::future<std::string> save_s3_object_async(Aws::S3::S3Client const& s3client,
 
     if (localdigest.has_value()) {
       if (localdigest.value() == remotedigest) {
-        std::clog << "using cached version of " << s3uri << " @ " << destpath 
-                  << " [" << localdigest.value() << "]" << std::endl;
+        dbglog << "using cached version of " << s3uri << " @ " << destpath 
+                  << " [" << localdigest.value() << "]";
         return destpath.string();
       }
     }
@@ -239,8 +240,7 @@ std::future<std::string> save_s3_object_async(Aws::S3::S3Client const& s3client,
     auto result = s3client.GetObject(request);
 
     if (!result.IsSuccess()) {
-      std::cerr << "s3 get failed for " << s3uri << ": " << result.GetError()
-                << std::endl;
+      errlog << "s3 get failed for " << s3uri << ": " << result.GetError();
 
       // this will eventually lead to the process being terminated
       // and this is ok, because this code runs on process start and
@@ -291,14 +291,14 @@ std::future<region_paths> region_paths::download_async(
     s3client = Aws::S3::S3Client(cfg);
   });
 
-  std::clog << "starting region data download for " << rp.name << std::endl;
+  infolog << "starting region data download for " << rp.name;
   return std::async([rp = std::move(rp)]() {
     auto ab_path = save_s3_object_async(s3client, rp.addressbook);
     auto poly_path = save_s3_object_async(s3client, rp.poly);
     auto osrm_path = save_s3_object_async(s3client, rp.osrm);
     sentio::utils::wait_for_all(ab_path, poly_path, osrm_path);
-    std::clog << "region " << rp.name << " data download completed." 
-              << std::endl;
+    infolog << "region " << rp.name << " data download completed." 
+             ;
 
     try {
       return region_paths {
@@ -308,8 +308,8 @@ std::future<region_paths> region_paths::download_async(
         .osrm = osrm_path.get()
       };
     } catch (std::exception const& e) {
-      std::cerr << "downloading region data failed for " 
-                << rp.name << ": " << e.what() << std::endl;
+      errlog << "downloading region data failed for " 
+                << rp.name << ": " << e.what();
       throw; 
     }
   });

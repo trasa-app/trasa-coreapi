@@ -20,7 +20,6 @@ private:
   struct sqlite3_destructor {
     void operator()(sqlite3* instance) const {
       if (instance != nullptr) {
-        std::cerr << "closing sqlite instance." << std::endl;
         auto result = sqlite3_close(instance);
         if (result != SQLITE_OK) {
           throw std::runtime_error("failed closing sqlite3");

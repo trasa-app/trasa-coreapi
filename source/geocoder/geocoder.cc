@@ -13,6 +13,7 @@
 #include <boost/algorithm/string/classification.hpp>
 
 #include "rpc/error.h"
+#include "utils/log.h"
 #include "utils/meta.h"
 #include "model/address.h"
 

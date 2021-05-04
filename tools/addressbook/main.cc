@@ -12,6 +12,8 @@
 #include <sqlite3.h>
 #include <import/region_reader.h>
 
+#include "utils/log.h"
+
 #define ensure_ok(expr) do {                  \
   if(expr != SQLITE_OK) {                     \
     throw std::runtime_error("sqlite error"); \
@@ -197,11 +199,11 @@ int main(int argc, const char** argv)
   optimize_inserts(dbptr);
 
   size_t counter = 0;
-  std::cout << "indexing building: " << std::endl;
+  std::cout << "indexing building: " << std::endl;;
   for (; record_it != sentinel; ++record_it, ++counter) {
     insert_building(*record_it, dbptr);
     std::cout  << "\033[A\33[2K\rindexing building: "
-               << counter << std::endl;
+               << counter << std::endl;;
   }
 
   // rebuild and compress indecies after all 
@@ -211,7 +213,7 @@ int main(int argc, const char** argv)
   // release and flush database to disk
   ensure_ok_db(sqlite3_close(dbptr), dbptr);
 
-  std::cout << std::endl << "buildings: " << counter << std::endl;;
+  std::cout << "buildings: " << counter << std::endl;
   std::cout << "sqlite version: " << sqlite3_libversion() << std::endl;
   return 0;
 }

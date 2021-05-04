@@ -14,6 +14,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "utils/log.h"
 #include "import/map_source.h"
 
 namespace sentio::import 
@@ -142,8 +143,7 @@ std::vector<import::region_paths> extract_osrm_packages(
   std::for_each(std::execution::par_unseq,
     std::begin(sources), std::end(sources), 
     [&](auto const& source) {
-      std::clog << "extracting region " 
-                << source.name << std::endl;
+      dbglog << "extracting region " << source.name;
       // all paths remain the same except the osrm uncompressed archive
       region_paths extracted_region(source);
       extracted_region.osrm = extract_map_archive(source.osrm);

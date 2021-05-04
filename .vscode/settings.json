@@ -73,7 +73,9 @@
     "variant": "cpp",
     "any": "cpp",
     "numbers": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "syncstream": "cpp",
+    "*.ipp": "cpp"
   },
   "cmake.configureOnOpen": true
 }

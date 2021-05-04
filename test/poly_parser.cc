@@ -13,20 +13,20 @@ TEST_CASE("Polyfile parser sanity check", "[polyfile]")
   using namespace sentio::import;
   std::stringstream ss;
 
-  ss << " " << std::endl;
-  ss << "województwo małopolskie" << std::endl;
-  ss << "1" << std::endl;
-  ss << " 19.5293411 49.5730542" << std::endl;
-  ss << " 19.5183851 49.5734240" << std::endl;
-  ss << " 19.5028861 49.5817613" << std::endl;
-  ss << " 19.4804077 49.5870350" << std::endl;
-  ss << " 19.4718653 49.6005735" << std::endl;
-  ss << " 19.4673762 49.6137628" << std::endl;
-  ss << " 19.4731000 49.6184268" << std::endl;
-  ss << " 19.9722965 50.5162508" << std::endl;
-  ss << "END" << std::endl;
-  ss << "END" << std::endl;
-  ss << " " << std::endl;
+  ss << " ";
+  ss << "województwo małopolskie";
+  ss << "1";
+  ss << " 19.5293411 49.5730542";
+  ss << " 19.5183851 49.5734240";
+  ss << " 19.5028861 49.5817613";
+  ss << " 19.4804077 49.5870350";
+  ss << " 19.4718653 49.6005735";
+  ss << " 19.4673762 49.6137628";
+  ss << " 19.4731000 49.6184268";
+  ss << " 19.9722965 50.5162508";
+  ss << "END";
+  ss << "END";
+  ss << " ";
 
   region_sources::polygon p = to_polygon(ss, "województwo małopolskie");
 
