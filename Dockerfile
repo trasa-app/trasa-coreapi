@@ -3,20 +3,18 @@
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
 # Build env prep stage
-FROM ubuntu:20.04 AS build-deps
+FROM ubuntu:21.04 AS build-deps
 
 # Prepare environment and install prereqs
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
   osmctools \
   cmake  \
-  gcc-9 \
-  g++-9 \
   gcc-10 \
   g++-10 \
-  clang \
   libboost-all-dev \
   libssl-dev \
+  libcrypto++-dev \
   zlib1g-dev \
   git \
   pkg-config \
@@ -35,7 +33,9 @@ RUN apt-get update && apt-get install -y \
   libtool \
   binutils \
   unzip \
-  uuid-dev 
+  uuid-dev && \
+  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 && \
+  update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
 
 # install libosrm libraries and headers on build machine
 RUN mkdir -p /deps && cd /deps && \
@@ -43,24 +43,23 @@ RUN mkdir -p /deps && cd /deps && \
   https://github.com/Project-OSRM/osrm-backend.git --branch=v5.24.0 && \
   cd osrm-backend && mkdir build && cd build && \
   BUILD_TYPE=Release \
+  CMAKE_CXX_STANDARD=20 \
   ENABLE_ASSERTIONS=OFF \ 
   BUILD_TOOLS=OFF \
-  CXXFLAGS="-DTBB_SUPPRESS_DEPRECATED_MESSAGES -w" \
+  CXXFLAGS="-DTBB_SUPPRESS_DEPRECATED_MESSAGES -DBOOST_BIND_GLOBAL_PLACEHOLDERS -DBOOST_ALLOW_DEPRECATED_HEADERS -w" \
   cmake .. && \
   make -j$(nproc) && \
   make install
 
 # install amazon web services c++ sdk
 RUN mkdir -p /deps && cd /deps && \
-  git clone --single-branch --depth 1 \ 
-  https://github.com/aws/aws-sdk-cpp.git --branch 1.8.0 --progress --verbose && \
+  git clone --single-branch --depth 1 --recurse-submodules \ 
+  https://github.com/aws/aws-sdk-cpp.git --branch 1.9.0 --progress --verbose && \
   cd aws-sdk-cpp && mkdir sdk_build && cd sdk_build && \
-  cmake ..  -DCMAKE_BUILD_TYPE=Release \
+  cmake .. -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_ONLY="dynamodb;logs;events;monitoring;sqs;s3" \
-  -DBUILD_SHARED_LIBS=OFF \
   -DCPP_STANDARD=17 \
-  -DCMAKE_CXX_STANDARD=17 \
-  -DENABLE_UNITY_BUILD=ON \
+  -DBUILD_SHARED_LIBS=OFF \
   -DENABLE_TESTING=OFF && \
   make -j$(nproc) && make install
 
@@ -93,7 +92,7 @@ RUN mkdir -p /app && \
 # stripped of source code and all libraries needed for building the
 # server code. Predownload map data locally to microservice image.
 
-FROM ubuntu:20.04 AS import-data
+FROM ubuntu:21.04 AS import-data
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt -o Acquire::AllowInsecureRepositories=true \

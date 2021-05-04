@@ -108,13 +108,13 @@ std::thread start_rpc_server(
       create_service(trip_service::sync(
         systemconfig.get_child("routing"), worldix, sources)));
     
-    // svcmap.emplace("geocode", 
-    //   create_service(geocoder_service(worldix, sources,
-    //     systemconfig.get_child("geocoder"))));
+    svcmap.emplace("geocode", 
+      create_service(geocoder_service(worldix, sources,
+        systemconfig.get_child("geocoder"))));
     
-    // svcmap.emplace("distance", 
-    //   create_service(distance_service(
-    //     systemconfig.get_child("routing"), worldix, sources)));
+    svcmap.emplace("distance", 
+      create_service(distance_service(
+        systemconfig.get_child("routing"), worldix, sources)));
 
     // this blocks the current thread until the server terminates
     sentio::rpc::run_server(
@@ -152,16 +152,6 @@ void init_logging()
       sinks::text_ostream_backend
     >>(backend);
   core->add_sink(sink);
-
-  // sink->set_formatter(
-  //   expr::stream
-  //       << expr::attr<unsigned int>("lineid")
-  //       << "[" << std::setw(5)
-  //       << trivial::severity
-  //       << "] " << expr::smessage);
-  
-  //core->add_global_attribute("lineid", attributes::counter<unsigned int>(1));
-  //core->add_global_attribute("timestamp", attributes::local_clock());
 }
 
 int main(int argc, const char** argv)
