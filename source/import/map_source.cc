@@ -221,7 +221,7 @@ std::future<std::string> save_s3_object_async(Aws::S3::S3Client const& s3client,
     if (localdigest.has_value()) {
       if (localdigest.value() == remotedigest) {
         dbglog << "using cached version of " << s3uri << " @ " << destpath 
-                  << " [" << localdigest.value() << "]";
+               << " [" << localdigest.value() << "]";
         return destpath.string();
       }
     }

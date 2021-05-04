@@ -9,9 +9,6 @@ jobs:
   build:
     runs-on: self-hosted
     steps:
-      - name: Checkout Sources 
-        uses: actions/checkout@v2
-        
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
