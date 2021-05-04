@@ -3,7 +3,7 @@
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
 # Build env prep stage
-FROM ubuntu:21.04 AS build-deps
+FROM ubuntu:20.04 AS build-deps
 
 # Prepare environment and install prereqs
 ARG DEBIAN_FRONTEND=noninteractive
@@ -92,7 +92,7 @@ RUN mkdir -p /app && \
 # stripped of source code and all libraries needed for building the
 # server code. Predownload map data locally to microservice image.
 
-FROM ubuntu:21.04 AS import-data
+FROM ubuntu:20.04 AS import-data
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt -o Acquire::AllowInsecureRepositories=true \
