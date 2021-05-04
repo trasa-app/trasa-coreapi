@@ -20,4 +20,5 @@ jobs:
           aws-region: eu-central-1
           
       - name: Build Server Executable
+          id: build-cde
           run: docker build . --target build-code
