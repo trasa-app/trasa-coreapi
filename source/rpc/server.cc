@@ -25,6 +25,7 @@
 #include "server.h"
 #include "service.h"
 #include "error.h"
+#include "utils/log.h"
 
 namespace sentio::rpc
 {
@@ -201,8 +202,8 @@ private:
         return;
       } else {
         // respond with HTTP error 405 and terminate connection.
-        std::cerr << "unsupported request method: " 
-                  << req.method() << std::endl;
+        errlog << "unsupported request method: " 
+                  << req.method();
         throw bad_method();
       }
     }
@@ -220,7 +221,7 @@ private:
       params = reqjson.get_child("params");
       method = reqjson.get<std::string>("method");
     } catch (...) {
-      std::cerr << "bad request body: " << req.body() << std::endl;
+      errlog << "bad request body: " << req.body();
       throw bad_request();
     }
 
@@ -228,7 +229,7 @@ private:
     // route to the right handler, or fail if not implemented.
     auto svcit = svcs_.find(method);
     if (svcit == svcs_.end()) {  // make sure that the method is impented
-      std::cerr << "unknown rpc method: " << method << std::endl;
+      errlog << "unknown rpc method: " << method;
       throw bad_method(method.c_str());
     }
 
@@ -275,9 +276,9 @@ private:
                             Then&& cont)
   {
     auto const& ep = socket_.remote_endpoint();
-    std::cerr << "request error [" << ep << "]: " << e.what() << std::endl;
-    std::cerr << boost::current_exception_diagnostic_information() << std::endl;
-    std::cerr << boost::stacktrace::stacktrace() << std::endl;
+    errlog << "request error [" << ep << "]: " << e.what();
+    errlog << boost::current_exception_diagnostic_information();
+    errlog << boost::stacktrace::stacktrace();
     eresponse_.result(status);     // HTTP error code (=/= 200)
     eresponse_.keep_alive(false);  // disconnect
     eresponse_.prepare_payload();  // serialize
@@ -293,7 +294,7 @@ private:
   void confirm_healthcheck()
   {
     auto const& ep = socket_.remote_endpoint();
-    std::clog << "health check from " << ep << ": ok" << std::endl;
+    infolog << "health check from " << ep << ": ok";
     auto checkresponse = std::make_shared<response<empty_body>>();
     checkresponse->result(http::status::ok);
     checkresponse->keep_alive(false);
@@ -324,20 +325,20 @@ void run_server(config config, service_map_t services)
 
   // start two http workers per one CPU core in parallel
   int workers_count = std::thread::hardware_concurrency() * 2;
-  std::clog << "starting JSON-RPC server on " 
-            << config.listen_ip << ":"
-            << config.listen_port
-            << " using " << workers_count 
-            << " worker threads." << std::endl;
+  infolog << "starting JSON-RPC server on " 
+       << config.listen_ip << ":"
+       << config.listen_port
+       << " using " << workers_count 
+       << " worker threads.";
 
   std::list<http_worker> workers;
   std::list<std::thread> threads;
 
   io_context ioctx{workers_count};
   ip::tcp::acceptor acceptor(ioctx,
-      ip::tcp::endpoint(
-        ip::make_address(config.listen_ip), 
-        config.listen_port));
+    ip::tcp::endpoint(
+      ip::make_address(config.listen_ip), 
+      config.listen_port));
 
   // initialize workers
   for (auto i = 0; i < workers_count; ++i) {
@@ -345,7 +346,7 @@ void run_server(config config, service_map_t services)
     workers.back().start();
     threads.emplace_back([&ioctx]() { ioctx.run(); });
   }
-
+  
   for (auto &t : threads) {
     if (t.joinable()) {
       t.join();

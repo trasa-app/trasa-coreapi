@@ -28,7 +28,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Environment & CMAKE options
 #----------------------------
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -80,7 +80,7 @@ find_package(Boost 1.71 REQUIRED
   COMPONENTS 
       system random chrono atomic
       regex filesystem program_options 
-      iostreams thread date_time
+      iostreams thread date_time log log_setup
       unit_test_framework locale)
 
 # various hacks and workarounds...
@@ -89,6 +89,9 @@ add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
 add_definitions(-DBOOST_THREAD_PROVIDES_FUTURE)
 add_definitions(-DBOOST_THREAD_PROVIDES_FUTURE_CONTINUATION)
 add_definitions(-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED)
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
+add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
 # end of various hacks and workarounds...
 
 #--------------------
@@ -154,8 +157,7 @@ add_library(trasa
   source/model/address.cc
 
   source/utils/aws.cc
-  source/utils/datetime.cc
-  source/utils/timestampss.cc)
+  source/utils/datetime.cc)
 
 
 #----------------
@@ -205,6 +207,7 @@ target_link_libraries(turbo_server
   ${LibArchive_LIBRARIES}
   ${Backtrace_LIBRARY} 
   ${SQLite3_LIBRARIES}
+  ${TORCH_LIBRARIES}
   ${TBB_LIBRARIES}
   ${LibOSRM_LIBRARIES}
   ${Boost_LIBRARIES})

@@ -3,6 +3,7 @@
 // Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
 #include "sqlite_fts.h"
+#include "utils/log.h"
 #include "utils/meta.h"
 
 #include <boost/algorithm/string.hpp>
@@ -10,9 +11,9 @@
 #define sqlite_ensure_ok(res, db)                         \
   do {                                                    \
     if (res != SQLITE_OK) {                               \
-      std::cerr << "sqlite error: "                       \
+      errlog << "sqlite error: "                       \
                 << (const char*)sqlite3_errmsg(db.get())  \
-                << std::endl;                             \
+               ;                             \
       throw std::runtime_error(sqlite3_errmsg(db.get())); \
     }                                                     \
   } while (false)
@@ -48,12 +49,13 @@ sqlite_backend::sqlite_backend(
   std::vector<import::region_paths> const& sources)
 {
   for (auto const& source: sources) {
-    std::clog << "indexing " << source.name << std::endl;
+    dbglog << "indexing " << source.name;
     sqlite3* handle = nullptr;
     auto openresult = sqlite3_open_v2(
       source.addressbook.c_str(), &handle, 
       SQLITE_OPEN_READONLY, nullptr);
     if (openresult != SQLITE_OK) {
+      errlog << "failed to open addressbook db";
       throw std::runtime_error("failed to open addressbook db");
     }
 

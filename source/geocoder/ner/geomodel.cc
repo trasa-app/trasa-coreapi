@@ -12,6 +12,7 @@
 #include <boost/iostreams/device/array.hpp>
 
 #include "geomodel.h"
+#include "utils/log.h"
 
 
 extern "C" 
@@ -213,7 +214,6 @@ geomodel load_embedded_model(torch::DeviceType device)
   size_t size = 
     _binary_assets_poland_model_end - 
     _binary_assets_poland_model_start;
-
   boost::iostreams::stream<
     boost::iostreams::array_source> instream(
       _binary_assets_poland_model_start, size);

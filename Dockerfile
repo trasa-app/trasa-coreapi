@@ -66,8 +66,8 @@ RUN mkdir -p /deps && cd /deps && \
 
 # install libtorch
 RUN mkdir -p /deps/torch && cd /deps/torch && \
-  wget -nv https://download.pytorch.org/libtorch/nightly/cpu/libtorch-cxx11-abi-shared-with-deps-latest.zip && \
-  unzip libtorch-cxx11-abi-shared-with-deps-latest.zip && cd libtorch/ && \
+  wget -nv https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-static-with-deps-1.8.1%2Bcpu.zip && \
+  unzip libtorch-cxx11-abi-static-with-deps-1.8.1+cpu.zip && cd libtorch/ && \
   cp -R . /usr/local
 
 
@@ -88,13 +88,14 @@ RUN mkdir -p /app && \
   cp /code/build/product/config.dev.json /app/config.dev.json
 
 
-# Production stage
+# Data Import stage
 
 # stripped of source code and all libraries needed for building the
-# server code.
+# server code. Predownload map data locally to microservice image.
 
-FROM ubuntu:20.04
+FROM ubuntu:20.04 AS import-data
 ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt -o Acquire::AllowInsecureRepositories=true \
   -o Acquire::AllowDowngradeToInsecureRepositories=true update
 RUN apt-get --allow-unauthenticated install -y \
@@ -103,4 +104,10 @@ RUN locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8
 RUN ulimit -n 999999
 COPY --from=build-code /app /app
 COPY --from=build-code /deps/torch/libtorch /usr/local
+RUN /app/turbo_server /app/config.prod.json none
+
+
+# Production stage - rpc role only
+FROM import-data
+
 ENTRYPOINT ["/app/turbo_server", "/app/config.prod.json" , "rpc"]

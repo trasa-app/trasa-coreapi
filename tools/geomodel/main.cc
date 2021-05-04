@@ -32,7 +32,8 @@ size_t params_count(sentio::geocoder::geomodel const& model)
     params_count += pset_count;
   }
   std::cout << "model trainable params count: " 
-            << params_count << std::endl;
+            << params_count
+            << std::endl;
   std::cout << "training using device: " 
             << torch::DeviceTypeName(model->device())
             << std::endl;
@@ -86,7 +87,8 @@ void do_train(
                   << batch_index << "/" << batches_count << " | "
                   << progress << "%)" << " / loss: " 
                   << std::setprecision(5) << loss_val 
-                  << std::setprecision(2) << std::endl;
+                  << std::setprecision(2)
+                  << std::endl;
         loss_val = 0.0;
       }
     }
@@ -94,7 +96,7 @@ void do_train(
     auto after = std::chrono::high_resolution_clock::now();
     std::cout << "epoch trained in "
               << sentio::geomodel::print_duration(after - before)
-              << std::endl << std::endl << std::endl;
+              << std::endl;
   }
 
   model->train(false);
@@ -140,7 +142,8 @@ float validate(
                   << sampleno << "/" << testsize
                   << " | acc: " << ((float(correct) / float(total)) * 100)
                   << "% | progress: " <<  ((float(sampleno) / float(testsize)) * 100)
-                  << "% | avg pass time: " << time_per_pass << "ms" << std::endl;
+                  << "% | avg pass time: " << time_per_pass << "ms"
+                  << std::endl;;
         total_elapsed += elapsed;
         elapsed = std::chrono::milliseconds::zero();
       }
@@ -176,8 +179,9 @@ void manual_test_samples(
   for (auto const& example: rep) {
     std::cout << "example: " << example << std::endl;
     auto eval = model(example);
-    std::cout << "eval output: " << std::endl 
-              << eval.view({1, eval.size(0)}) << std::endl;
+    std::cout << "eval output: " 
+              << eval.view({1, eval.size(0)})
+              << std::endl;
   }
 }
 
@@ -216,7 +220,7 @@ int main(int argc, const char** argv)
 {
   using namespace sentio::geomodel;
 
-  std::cout << "Sentio Trasa Geomodel Training Tool 1.0" << std::endl;
+  std::cout << "Sentio Trasa Geomodel Training Tool 1.0";
 
   if (argc != 3) {
     std::cerr << "usage: " << argv[0] 
@@ -236,7 +240,6 @@ int main(int argc, const char** argv)
     ? torch::DeviceType::CUDA
     : torch::DeviceType::CPU;
   
-  
   auto [trainds, testds] = import_datasets(inputcsv, 0.7, device, max_samples);
   
   std::cout << "batch size: " << batch_size << std::endl;
@@ -251,14 +254,13 @@ int main(int argc, const char** argv)
 
   auto tstart = std::chrono::high_resolution_clock::now();
   std::cout << "training started..." 
-            << std::endl << std::endl
             << std::endl;
 
   // run training loop
   do_train(model, testds, epochs_num);
 
   // save trained model: 
-  std::cout << "saving trained model to: " << outputmodel << "...";
+  std::cout << "saving trained model to: " << outputmodel << "..." << std::endl;
   model.save_snapshot(outputmodel);
   std::cout << std::endl;
 
@@ -273,7 +275,8 @@ int main(int argc, const char** argv)
   std::cout << "training completed in " 
             << print_duration(tend - tstart)
             << " for " << epochs_num 
-            << " epochs." << std::endl;
+            << " epochs."
+            << std::endl;
 
   return 0;
 }

@@ -3,6 +3,7 @@
 // Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
 #include "event.h"
+#include "utils/log.h"
 #include "utils/meta.h"
 #include "utils/aws.h"
 
@@ -43,9 +44,9 @@ public:
         *requestobj, [ev = std::move(ev), requestobj](
                          auto*, auto const&, auto const& result, auto const&) {
           if (!result.IsSuccess()) {
-            std::cerr << "failed to store location event: " << ev.event_type
+            errlog << "failed to store location event: " << ev.event_type
                       << " for " << ev.accountid << ": " << result.GetError()
-                      << std::endl;
+                     ;
           }
         });
   }

@@ -12,6 +12,7 @@
 #include <boost/date_time/posix_time/time_parsers.hpp>
 
 #include "trip.h"
+#include "utils/log.h"
 #include "utils/meta.h"
 
 #define prod_assert(x) if (!(x)) {     \
@@ -32,7 +33,7 @@ waypoints_from_json_list(json_t const& wps)
     } catch (...) {
       std::stringstream ss;
       boost::property_tree::write_json(ss, wp.second);
-      std::cerr << "parsing waypoint failed at: " << ss.str() << std::endl;
+      errlog << "parsing waypoint failed at: " << ss.str();
       throw;
     }
   }

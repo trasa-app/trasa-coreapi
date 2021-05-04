@@ -17,6 +17,7 @@
 #include "scheduler.h"
 #include "osrm_interop.h"
 #include "utils/aws.h"
+#include "utils/log.h"
 #include "utils/future.h"
 #include "import/map_source.h"
 
@@ -60,15 +61,15 @@ void persist_complete_trip(
         (int)tr.trip().total_cost().duration.count())));
 
   if (!putresult.IsSuccess()) {
-    std::cerr << "persisting trip "
+    errlog << "persisting trip "
               << tr.meta().id().value() << " failed "
-              << putresult.GetError() << std::endl;
+              << putresult.GetError();
     throw std::runtime_error(putresult.GetError().GetMessage());
   }
 
-  std::clog << "persisted trip " << tr.meta().id().value()
+  infolog << "persisted trip " << tr.meta().id().value()
             << " in dynamodb table " << aws::resources().tables.trips
-            << std::endl;
+           ;
 }
 
 void persist_discarded_trip(
@@ -95,9 +96,9 @@ void persist_discarded_trip(
       .AddItem("error", aws_db::AttributeValue(error)));
 
   if (!putresult.IsSuccess()) {
-    std::cerr << "failed to persist failed trip request status for "
+    errlog << "failed to persist failed trip request status for "
               << meta.id().value() << ": " << putresult.GetError() 
-              << std::endl;
+             ;
   }
 }
 
@@ -113,12 +114,12 @@ void start_routing_worker(config const& config,
     std::thread::hardware_concurrency() * 
     config.worker_concurrency;
 
-  std::clog << "using trip requests queue: " 
+  infolog << "using trip requests queue: " 
             << aws::resources().queues.pending_routes
-            << std::endl;
-  std::clog << "starting " << worker_count 
+           ;
+  infolog << "starting " << worker_count 
             << " routing worker therads"
-            << std::endl;
+           ;
 
   std::list<std::thread> workers;
   for (size_t i = 0; i < worker_count; ++i) {
@@ -158,9 +159,9 @@ void start_routing_worker(config const& config,
           // scheduler queue, so it won't be retried anymore.
           scheduler.complete_trip(std::move(tripresponse));
         } catch (std::exception const& e) {
-          std::cerr << "trip " << nextrequest->meta().id().value()
+          errlog << "trip " << nextrequest->meta().id().value()
                     << "failed and will be discarded permanently: " 
-                    << e.what() << std::endl;
+                    << e.what();
           scheduler.discard_trip(tripmeta);
           persist_discarded_trip(std::move(tripmeta), e.what(), ddbclient);
         }

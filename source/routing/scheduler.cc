@@ -15,6 +15,7 @@
 #include <aws/sqs/model/GetQueueAttributesRequest.h>
 
 #include "scheduler.h"
+#include "utils/log.h"
 #include "utils/aws.h"
 
 namespace sentio::routing
@@ -40,7 +41,7 @@ size_t scheduler::pending_promises() const
   attrreq.AddAttributeNames(QueueAttributeName::ApproximateNumberOfMessages);
   auto result = sqs_.GetQueueAttributes(attrreq);
   if (!result.IsSuccess()) {
-    std::cerr << result.GetError() << std::endl;
+    errlog << result.GetError();
     throw std::runtime_error(result.GetError().GetMessage());
   } else {
     auto const& attribs = result.GetResult().GetAttributes();
@@ -62,7 +63,7 @@ trip_promise scheduler::schedule_trip(trip_request t) const
     boost::property_tree::write_json(ss, t.to_json());
     queuemsg.SetMessageBody(ss.str());
   } catch (std::exception const& e) {
-    std::cerr << e.what() << std::endl;
+    errlog << e.what();
     throw;
   }
   auto result = sqs_.SendMessage(queuemsg);
@@ -74,7 +75,7 @@ trip_promise scheduler::schedule_trip(trip_request t) const
       .scheduled_at = second_clock::universal_time()
     };
   } else {
-    std::cerr << result.GetError() << std::endl;
+    errlog << result.GetError();
     throw std::runtime_error(result.GetError().GetMessage());
   }
 }
@@ -87,9 +88,9 @@ void delete_message(std::string receipthandle, Aws::SQS::SQSClient const& sqs)
   auto result = sqs.DeleteMessage(delmsg);
 
   if (!result.IsSuccess()) {
-    std::cerr << "failed to delete message with receipt id "
+    errlog << "failed to delete message with receipt id "
               << delmsg.GetReceiptHandle() << ": "
-              << result.GetError() << std::endl;
+              << result.GetError();
   }
 }
 
@@ -101,10 +102,10 @@ std::optional<trip_request> scheduler::poll_trip_request() const
 
   auto result = sqs_.ReceiveMessage(getmsg);
   if (!result.IsSuccess()) {
-    std::cerr << "error polling pending routes queue: "
+    errlog << "error polling pending routes queue: "
               << result.GetError() << ". queue url: "
               << aws::resources().queues.pending_routes
-              << std::endl;
+             ;
     return {};
   }
 
@@ -120,20 +121,20 @@ std::optional<trip_request> scheduler::poll_trip_request() const
     requestjson.add("meta.id", msgs[0].GetMessageId());
     requestjson.add("meta.receipthandle", msgs[0].GetReceiptHandle());
     trip_request trip(requestjson);
-    std::clog << "processing trip request with id " 
+    infolog << "processing trip request with id " 
               << trip.meta().id().value() << " in region "
               << trip.meta().region() << " for account " 
-              << trip.meta().accountid() << std::endl;
+              << trip.meta().accountid();
     return trip;
   } catch (std::exception const& e) {
-    std::cerr << "failed receiving trip request with id "
+    errlog << "failed receiving trip request with id "
               << msgs[0].GetMessageId() << ": " 
-              << e.what() << std::endl;
-    std::cerr << "deleting message id " 
+              << e.what();
+    errlog << "deleting message id " 
               << msgs[0].GetMessageId() 
               << ", receipt handle: " 
               << msgs[0].GetReceiptHandle()
-              << std::endl;
+             ;
     delete_message(msgs[0].GetReceiptHandle(), sqs_);
     return {};
   }
@@ -144,9 +145,9 @@ void scheduler::complete_trip(trip_response&& response) const
   assert(response.meta().id().has_value());
   assert(response.meta().receipthandle().has_value());
 
-  std::clog << "removed trip request with id " 
+  infolog << "removed trip request with id " 
             << response.meta().id().value()
-            << " from scheduler queue." << std::endl;
+            << " from scheduler queue.";
 
   delete_message(response.meta().receipthandle().value(), sqs_);
 }

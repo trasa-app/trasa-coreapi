@@ -3,6 +3,7 @@
 // Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
 #include "store.h"
+#include "utils/log.h"
 #include "utils/aws.h"
 #include "utils/meta.h"
 
@@ -127,7 +128,7 @@ public:
     auto const& result = ddbclient_.GetItem(request);
 
     if (!result.IsSuccess()) {
-      std::cerr << result.GetError() << std::endl;
+      errlog << result.GetError();
       throw std::runtime_error(result.GetError().GetMessage());
     }
 
@@ -193,7 +194,7 @@ public:
 
     auto const& update_result = ddbclient_.UpdateItem(request);
     if (!update_result.IsSuccess()) {
-      std::cerr << update_result.GetError() << std::endl;
+      errlog << update_result.GetError();
       throw std::runtime_error(update_result.GetError().GetMessage());
     }
 
@@ -223,7 +224,7 @@ public:
             .AddItem("created_at", aws_db::AttributeValue(bpt::to_iso_string(
                                        account.created_at))));
     if (!result.IsSuccess()) {
-      std::cerr << result.GetError() << std::endl;
+      errlog << result.GetError();
       throw std::runtime_error(result.GetError().GetMessage());
     }
     return account;

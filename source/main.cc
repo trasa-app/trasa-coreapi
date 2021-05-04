@@ -9,6 +9,13 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/core/null_deleter.hpp>
+
+// #include <boost/log/expressions.hpp>
+// #include <boost/log/attributes.hpp>
+// #include <boost/log/sinks/async_frontend.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
 
 #include "rpc/server.h"
 #include "spacial/index.h"
@@ -22,23 +29,31 @@
 #include "services/accounts.h"
 
 #include "utils/aws.h"
+#include "utils/log.h"
 #include "utils/future.h"
-#include "utils/timestampss.h"
 
 enum exec_role {
+  none    = 0x00,
   rpc     = 0x01, 
   worker  = 0x02, 
-  both = rpc | worker
+  both = rpc | worker,
 };
 
 auto download_regions(std::vector<sentio::import::region_paths> const& sources)
 {
   using namespace sentio::import;
   std::vector<std::future<region_paths>> import_tasks;
+  
   for (auto const& region_paths : sources) {
-    import_tasks.emplace_back(region_paths::download_async(region_paths));
+    import_tasks.emplace_back(
+      region_paths::download_async(
+        region_paths));
   }
-  sentio::utils::wait_for_all(import_tasks.begin(), import_tasks.end());
+
+  sentio::utils::wait_for_all(
+    import_tasks.begin(), 
+    import_tasks.end());
+
   std::vector<region_paths> output;
   for (auto& task : import_tasks) {
     output.emplace_back(task.get());
@@ -55,12 +70,14 @@ exec_role read_role(int argc, const char** argv)
       return exec_role::worker;
     } else if (boost::iequals(argv[2], "both")) {
       return exec_role::both;
+    } else if (boost::iequals(argv[2], "none")) {
+      return exec_role::none;
     } else {
       throw std::invalid_argument(
         "unrecognized role (expected rpc, worker or both)");
     }
   }
-  return exec_role::both; // default
+  return exec_role::none; // default
 }
 
 std::thread start_rpc_server(
@@ -72,15 +89,13 @@ std::thread start_rpc_server(
 
   return std::thread([&]{
     sentio::spacial::index worldix(sources);
-
     // this is the set of configs needed to expose JSON-RPC endpoints over http.
     sentio::rpc::config rpcconfig{
       .listen_ip = systemconfig.get<std::string>("rpc.address"),
       .listen_port = systemconfig.get<uint16_t>("rpc.port"),
       .secret = systemconfig.get<std::string>("authentication.secret")};
-    
     sentio::rpc::service_map_t svcmap;
-    
+
     // svcmap.emplace("trip.poll",   
     //   create_service(trip_service::poll(
     //     systemconfig.get_child("routing"), worldix)));
@@ -92,17 +107,19 @@ std::thread start_rpc_server(
     svcmap.emplace("trip",
       create_service(trip_service::sync(
         systemconfig.get_child("routing"), worldix, sources)));
-
-    svcmap.emplace("geocode", 
-      create_service(geocoder_service(worldix, sources,
-        systemconfig.get_child("geocoder"))));
-
+    
+    // svcmap.emplace("geocode", 
+    //   create_service(geocoder_service(worldix, sources,
+    //     systemconfig.get_child("geocoder"))));
+    
     // svcmap.emplace("distance", 
     //   create_service(distance_service(
     //     systemconfig.get_child("routing"), worldix, sources)));
 
     // this blocks the current thread until the server terminates
-    sentio::rpc::run_server(std::move(rpcconfig), std::move(svcmap));
+    sentio::rpc::run_server(
+      std::move(rpcconfig), 
+      std::move(svcmap));
   });
 }
 
@@ -112,10 +129,39 @@ std::thread start_worker_server(
   std::vector<sentio::import::region_paths> const& sources)
 {
   return std::thread([&]{
-    std::cout << "starting routing worker." << std::endl;
+    infolog << "starting routing worker.";
     sentio::routing::start_routing_worker(
       systemconfig.get_child("routing"), sources);
   });
+}
+
+void init_logging()
+{
+  using namespace boost::log;
+  namespace expr = boost::log::expressions; 
+
+  auto core = core::get();
+  auto backend = boost::make_shared<sinks::text_ostream_backend>();
+
+  backend->add_stream(boost::shared_ptr<std::ostream>(
+    &std::clog, boost::null_deleter()));
+  backend->auto_flush(true);
+
+  auto sink = boost::make_shared<
+    sinks::synchronous_sink<
+      sinks::text_ostream_backend
+    >>(backend);
+  core->add_sink(sink);
+
+  // sink->set_formatter(
+  //   expr::stream
+  //       << expr::attr<unsigned int>("lineid")
+  //       << "[" << std::setw(5)
+  //       << trivial::severity
+  //       << "] " << expr::smessage);
+  
+  //core->add_global_attribute("lineid", attributes::counter<unsigned int>(1));
+  //core->add_global_attribute("timestamp", attributes::local_clock());
 }
 
 int main(int argc, const char** argv)
@@ -125,18 +171,18 @@ int main(int argc, const char** argv)
 
   if (argc < 2 || argc > 3) {
     std::cerr << "usage: " << argv[0] 
-              << " <config-file> [rpc|worker|both]" << std::endl;
+              << " <config-file> [rpc|worker|both]"
+              << std::endl;
     return 1;
   }
 
-  // timestamp all console output
-  timestamped_streambuf tout[] = {
-    std::cout, std::cerr, std::clog};
+  init_logging();
 
   try {
     // check how we are going to start this instance of
     // the executable.
     exec_role role = read_role(argc, argv);
+    infolog << "running in role: " << role;
 
     // this holds rpc config, regions config, aws, etc.
     boost::property_tree::ptree systemconfig;
@@ -151,13 +197,11 @@ int main(int argc, const char** argv)
     std::vector<region_paths> sources = download_regions(
       region_paths::from_config(systemconfig));
 
-    std::clog << "downloaded " << sources.size() 
-              << " regions." << std::endl;
-    
-    std::clog << "extracting " << sources.size()
-              << " regions...." << std::endl;
+    infolog << "downloaded " << sources.size() << " regions.";
+    dbglog << "extracting " << sources.size() << " regions....";
 
     auto extracted_sources = extract_osrm_packages(sources);
+    infolog << "extracted " << extracted_sources.size() << " regions";
 
     // depending on the enabled roles for this instance, this
     // will have either one or two main threads, each for one
@@ -165,6 +209,7 @@ int main(int argc, const char** argv)
     std::list<std::thread> rolethreads;
 
     if (role & exec_role::rpc) {
+      infolog << "starting rpc role";
       // this means that this node will respond to RPC 
       // requests over HTTP.
       rolethreads.emplace_back(
@@ -172,6 +217,7 @@ int main(int argc, const char** argv)
     }
 
     if (role & exec_role::worker) {
+      infolog << "starting worker role";
       // this means that this node will poll the work queue
       // for outstanding trip optimization requests and compute
       // optimized routes then store them in dynamodb.
@@ -186,7 +232,7 @@ int main(int argc, const char** argv)
     }
     
   } catch (std::exception const& e) {
-    std::cerr << "fatal: " << e.what() << std::endl;
+    errlog << "fatal: " << e.what();
     throw;
   }
   return 0;

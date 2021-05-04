@@ -70,7 +70,12 @@
     "typeindex": "cpp",
     "typeinfo": "cpp",
     "valarray": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "any": "cpp",
+    "numbers": "cpp",
+    "semaphore": "cpp",
+    "syncstream": "cpp",
+    "*.ipp": "cpp"
   },
   "cmake.configureOnOpen": true
 }

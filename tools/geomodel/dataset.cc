@@ -134,11 +134,11 @@ std::vector<sample> import_samples(
   // for each building, run all transforms
   // and insert all generated variants of all 
   // transforms
-  std::cout << std::endl << std::endl;
+  std::cout;
   for (auto const& bldg: addrbook) {
     if (++counter % report_every == 0) {
       std::cout << "\033[A\33[2K\rimporting dataset: " 
-                << counter << " samples" << std::endl; 
+                << counter << " samples"; 
     }
 
     for (auto const& transform: transforms) {
@@ -148,7 +148,7 @@ std::vector<sample> import_samples(
     }
   }
 
-  std::cout << "import complete." << std::endl;
+  std::cout << "import complete.";
 
   return output;
 }
