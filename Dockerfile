@@ -25,6 +25,7 @@ RUN apt-get install -y \
   libssl-dev \
   libcrypto++-dev \
   zlib1g-dev \
+  nlohmann-json3-dev \
   git \
   pkg-config \
   libbz2-dev \
@@ -45,6 +46,13 @@ RUN apt-get install -y \
   uuid-dev && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 && \
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+
+# install JWT C++ header only library
+RUN mkdir -p /deps && cd /deps && \
+  git clone https://github.com/arun11299/cpp-jwt.git && \
+  cd cpp-jwt && mkdir build && cd build && \
+  cmake .. -DCPP_JWT_BUILD_TESTS=OFF -DCPP_JWT_BUILD_EXAMPLES=OFF && \
+  make -j$(nproc) && make install
 
 # install libosrm libraries and headers on build machine
 RUN mkdir -p /deps && cd /deps && \

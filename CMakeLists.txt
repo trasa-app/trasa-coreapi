@@ -8,7 +8,6 @@ project(turbo_trasa
   HOMEPAGE_URL http://trasa.app
   LANGUAGES C CXX
   DESCRIPTION "Backend services for trasa")
-include(ExternalProject)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR AND NOT MSVC_IDE)
   message(FATAL_ERROR "In-source builds are not allowed.
@@ -63,6 +62,7 @@ set(Boost_USE_RELEASE_LIBS  TRUE)
 set(Boost_USE_MULTITHREADED TRUE)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 
+
 find_package(PkgConfig)
 find_package(CURL REQUIRED)
 find_package(Backtrace)
@@ -78,7 +78,7 @@ find_package(AWSSDK REQUIRED
 find_package(Boost 1.71 REQUIRED
   COMPONENTS 
       system random chrono atomic
-      regex filesystem program_options 
+      regex filesystem program_options
       iostreams thread date_time log log_setup
       unit_test_framework locale)
 
@@ -92,24 +92,6 @@ add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 add_definitions(-DBOOST_ALLOW_DEPRECATED_HEADERS)
 add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
 # end of various hacks and workarounds...
-
-#--------------------
-# Remote dependencies
-#--------------------
-
-ExternalProject_Add(boost_url
-  GIT_REPOSITORY https://github.com/CPPAlliance/url.git
-  GIT_TAG        master
-  STEP_TARGETS   trasa
-  INSTALL_COMMAND       ""
-)
-
-ExternalProject_Add(boost_json
-  GIT_REPOSITORY https://github.com/boostorg/json.git
-  GIT_TAG        master
-  STEP_TARGETS   trasa
-  INSTALL_COMMAND       ""
-)
 
 #--------------------
 # Global includes
@@ -177,7 +159,6 @@ add_library(trasa
 
   source/utils/aws.cc
   source/utils/datetime.cc)
-
 
 #----------------
 # Compile assets
