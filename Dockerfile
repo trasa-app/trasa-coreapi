@@ -49,7 +49,7 @@ RUN apt-get install -y \
 
 # install JWT C++ header only library
 RUN mkdir -p /deps && cd /deps && \
-  git clone https://github.com/Thalhammer/jwt-cpp.gi && \
+  git clone https://github.com/Thalhammer/jwt-cpp.git && \
   cd jwt-cpp && mkdir build && cd build && \
   cmake .. -DCMAKE_BUILD_TYPE=Release -DJWT_BUILD_EXAMPLES=OFF && \
   make -j$(nproc) && make install
