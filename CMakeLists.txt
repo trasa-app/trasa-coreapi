@@ -2,13 +2,13 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.18)
 project(turbo_trasa 
   VERSION 1.0
   HOMEPAGE_URL http://trasa.app
   LANGUAGES C CXX
   DESCRIPTION "Backend services for trasa")
-
+include(ExternalProject)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR AND NOT MSVC_IDE)
   message(FATAL_ERROR "In-source builds are not allowed.
@@ -22,7 +22,6 @@ endif()
 
 # auto import custom cmake scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 
 #----------------------------
 # Environment & CMAKE options
@@ -95,9 +94,27 @@ add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
 # end of various hacks and workarounds...
 
 #--------------------
+# Remote dependencies
+#--------------------
+
+ExternalProject_Add(boost_url
+  GIT_REPOSITORY https://github.com/CPPAlliance/url.git
+  GIT_TAG        master
+  STEP_TARGETS   build
+)
+
+ExternalProject_Add(boost_json
+  GIT_REPOSITORY https://github.com/boostorg/json.git
+  GIT_TAG        master
+  STEP_TARGETS   build
+)
+
+#--------------------
 # Global includes
 #--------------------
 
+include_directories(${BOOST_URL_HEADERS})
+include_directories(${BOOST_JSON_HEADERS})
 include_directories(${TORCH_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${SQLite3_INCLUDE_DIRS})
