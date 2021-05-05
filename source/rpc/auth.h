@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string_view>
 
@@ -17,14 +18,22 @@ namespace sentio::rpc
 class auth 
 {
 public:
-  auth(json_t const& config);
+  auth(auth&&);
 
+public:
+  auth(json_t const& config);
+  ~auth();
+  
 public:
   bool empty() const;
   size_t size() const;
 
 public:
-  std::optional<json_t> authorize(std::string_view const&) const;  
+  std::optional<json_t> authorize(std::string_view const&) const;
+
+private:
+  class impl;
+  std::unique_ptr<impl> impl_;
 };
 
 }

@@ -4,31 +4,9 @@
     "port": 5001,
     "auth": [
       {
-        "type": "jwt",
+        "type": "jwt-rs256",
         "name": "firebase",
-        "jwk": "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-      },
-      {
-        "type": "jwt",
-        "name": "trasa-prod",
-        "jwk": "https://trasa.app/jwk.json"
-      },
-      {
-        "type": "jwt",
-        "name": "trasa-dev",
-        "jwk": {
-          "keys": [
-            {
-              "kty": "EC",
-              "d": "k4iPoFnDk_1GlmFnExef0dGsjN1McCnc4j5LNU6ZMU8",
-              "crv": "secp256k1",
-              "kid": "cg94JvtYppHern6AS6mwAez9GjbTPEt7dbcWSqsEqCY",
-              "x": "4M6fzTpjTpaNER72NojKNxcPoVBqGj0GFvYuVgJNcG8",
-              "y": "3z6SSxFNdPNtr3RR_kNmLONEsTia_SWFhIXFFgEN-rU",
-              "alg": "ES256K"
-            }
-          ]
-        }
+        "keys": "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
       }
     ]
   },
@@ -52,10 +30,6 @@
   },
   "geocoder": {
     "mode": "sqlite_fts"
-  },
-  "authentication": {
-    "secret": "Oi8LC0O9lSt2UIPhodylwZrgSc0SIbYwV7UMLBA6",
-    "token_ttl": "86400"
   },
   "regions": [
     {
