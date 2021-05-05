@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.20)
 project(turbo_trasa 
   VERSION 1.0
   HOMEPAGE_URL http://trasa.app
@@ -100,13 +100,15 @@ add_definitions(-DTBB_SUPPRESS_DEPRECATED_MESSAGES)
 ExternalProject_Add(boost_url
   GIT_REPOSITORY https://github.com/CPPAlliance/url.git
   GIT_TAG        master
-  STEP_TARGETS   build
+  STEP_TARGETS   trasa
+  INSTALL_COMMAND       ""
 )
 
 ExternalProject_Add(boost_json
   GIT_REPOSITORY https://github.com/boostorg/json.git
   GIT_TAG        master
-  STEP_TARGETS   build
+  STEP_TARGETS   trasa
+  INSTALL_COMMAND       ""
 )
 
 #--------------------
