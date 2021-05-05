@@ -11,9 +11,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/core/null_deleter.hpp>
 
-// #include <boost/log/expressions.hpp>
-// #include <boost/log/attributes.hpp>
-// #include <boost/log/sinks/async_frontend.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 
@@ -26,7 +23,6 @@
 #include "services/trip.h"
 #include "services/distance.h"
 #include "services/geocoder.h"
-#include "services/accounts.h"
 
 #include "utils/aws.h"
 #include "utils/log.h"
@@ -93,7 +89,7 @@ std::thread start_rpc_server(
     sentio::rpc::config rpcconfig{
       .listen_ip = systemconfig.get<std::string>("rpc.address"),
       .listen_port = systemconfig.get<uint16_t>("rpc.port"),
-      .secret = systemconfig.get<std::string>("authentication.secret")};
+      .guard = systemconfig.get_child("rpc.auth")};
     sentio::rpc::service_map_t svcmap;
 
     // svcmap.emplace("trip.poll",   

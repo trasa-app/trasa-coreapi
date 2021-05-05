@@ -49,9 +49,9 @@ RUN apt-get install -y \
 
 # install JWT C++ header only library
 RUN mkdir -p /deps && cd /deps && \
-  git clone https://github.com/arun11299/cpp-jwt.git && \
-  cd cpp-jwt && mkdir build && cd build && \
-  cmake .. -DCPP_JWT_BUILD_TESTS=OFF -DCPP_JWT_BUILD_EXAMPLES=OFF && \
+  git clone https://github.com/Thalhammer/jwt-cpp.gi && \
+  cd jwt-cpp && mkdir build && cd build && \
+  cmake .. -DCMAKE_BUILD_TYPE=Release -DJWT_BUILD_EXAMPLES=OFF && \
   make -j$(nproc) && make install
 
 # install libosrm libraries and headers on build machine

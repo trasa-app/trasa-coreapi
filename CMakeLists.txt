@@ -122,12 +122,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 #
 
 add_library(trasa
+  source/rpc/auth.cc
   source/rpc/error.cc
   source/rpc/server.cc
-  source/rpc/jwt.cc
-  
-  source/account/model.cc
-  source/account/store.cc
 
   source/routing/trip.cc
   source/routing/worker.cc
@@ -152,7 +149,6 @@ add_library(trasa
 
   source/services/trip.cc
   source/services/geocoder.cc
-  source/services/accounts.cc
   source/services/distance.cc
 
   source/model/address.cc

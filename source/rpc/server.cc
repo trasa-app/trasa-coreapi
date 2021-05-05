@@ -21,7 +21,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
-#include "jwt.h"
 #include "server.h"
 #include "service.h"
 #include "error.h"
@@ -65,11 +64,11 @@ private:  // types
 
 public:  // construction
   http_worker(ip::tcp::acceptor& acceptor, service_map_t const& svcs,
-              std::string const& secret)
-    : svcs_(svcs)
+              auth const& guard)
+    : guard_(guard) 
+    , svcs_(svcs)
     , acceptor_(acceptor)
     , socket_(acceptor.get_executor())
-    , secret_(secret)
   { assert(svcs_.size() != 0); }
 
 public:
@@ -151,9 +150,6 @@ private:
     } catch (bad_method const& e) {
       return terminate_with_error(e, status::method_not_allowed,
                                   [this]() { do_accept(); });
-    } catch (invalid_token const& e) {
-      return terminate_with_error(e, status::unauthorized,
-                                  [this]() { do_accept(); });
     } catch (std::exception const& e) {
       return terminate_with_error(e, status::internal_server_error,
                                   [this]() { do_accept(); });
@@ -178,12 +174,16 @@ private:
     }
     std::string_view tokenview(authval.data(), authval.size());
     tokenview.remove_prefix(prefix.size());
-    json_t payload(rpc::jwt::read_payload(tokenview, secret_));
-    return context {
-      .uid = payload.get<std::string>("upn"),
-      .role = payload.get<std::string>("role"),
-      .remote_ep = socket.remote_endpoint()
-    };
+
+    if (auto decoded = guard_.authorize(tokenview); decoded.has_value()) {
+      return context {
+        .uid = decoded->get<std::string>("upn"),
+        .role = decoded->get<std::string>("role"),
+        .remote_ep = socket.remote_endpoint()
+      };
+    } else {
+      throw not_authorized();
+    }
   }
 
   /**
@@ -306,6 +306,7 @@ private:
   }
 
 private:  // internal state
+  auth const& guard_;
   service_map_t const& svcs_;
   ip::tcp::acceptor& acceptor_;
   ip::tcp::socket socket_;
@@ -313,14 +314,13 @@ private:  // internal state
   request<string_body_t> request_;
   response<string_body_t> response_;
   response<error_body_t> eresponse_;
-  std::string const& secret_;
 };
 
 // clang-format off
 void run_server(config config, service_map_t services)
 {
   assert(config.listen_port != 0);
-  assert(!config.secret.empty());
+  assert(!config.guard.empty());
   assert(!config.listen_ip.empty());
 
   // start two http workers per one CPU core in parallel
@@ -342,7 +342,7 @@ void run_server(config config, service_map_t services)
 
   // initialize workers
   for (auto i = 0; i < workers_count; ++i) {
-    workers.emplace_back(acceptor, services, config.secret);
+    workers.emplace_back(acceptor, services, config.guard);
     workers.back().start();
     threads.emplace_back([&ioctx]() { ioctx.run(); });
   }

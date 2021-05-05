@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "auth.h"
 #include "service.h"
 
 namespace sentio::rpc
@@ -47,9 +48,10 @@ struct config {
   uint16_t listen_port;
 
   /**
-   * The secret key used to sign and verify JWT tokens.
+   * The set of authentication methods and configurations that allow 
+   * clients to access services hosted by this server.
    */
-  std::string secret;
+  auth guard;
 };
 
 /**
