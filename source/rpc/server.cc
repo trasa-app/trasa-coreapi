@@ -114,7 +114,9 @@ private:
   {
     http::async_read(
         socket_, buffer_, request_,
-        [this](auto error, size_t len) { do_handle_request(error, len); });
+        [this](auto error, size_t len) { 
+          do_handle_request(error, len); 
+        });
   }
 
   /**

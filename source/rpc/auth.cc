@@ -38,11 +38,12 @@ class validator
 {
 public:
   validator(
-    std::string kid, 
+    std::string kid,
+    std::string name, 
     std::string iss, 
     std::string aud,
     std::string cert) 
-    : kid_(kid), iss_(iss), aud_(aud)
+    : kid_(kid), iss_(iss), aud_(aud), name_(name)
     , verifier_(jwt::verify()
         .with_issuer(std::move(iss))
         .with_audience(std::move(aud))
@@ -53,6 +54,9 @@ public:
 public:
   std::string kid() const 
   { return kid_; }
+
+  std::string name() const 
+  { return name_; }
 
   std::string issuer() const
   { return iss_; }
@@ -65,7 +69,7 @@ public:
   { verifier_.verify(token); }
 
 private:
-  std::string kid_, iss_, aud_;
+  std::string kid_, iss_, aud_, name_;
   jwt::verifier<jwt::default_clock, jwt::picojson_traits> verifier_;
 };
 
@@ -109,6 +113,7 @@ std::vector<validator> read_validator(json_t const& entry) {
     for (auto const& key: keys) {
       output.emplace_back(
         key.first, 
+        entry.get<std::string>("name"),
         entry.get<std::string>("issuer"),
         entry.get<std::string>("audience"),
         key.second.get_value<std::string>());
@@ -117,6 +122,7 @@ std::vector<validator> read_validator(json_t const& entry) {
     for (auto const& key: entry.get_child("keys")) {
       output.emplace_back(
         key.first, 
+        entry.get<std::string>("name"),
         entry.get<std::string>("issuer"),
         entry.get<std::string>("audience"),
         key.second.get_value<std::string>());
@@ -158,7 +164,7 @@ public:
 
       json_t output;
       output.add("upn", decoded.get_payload_claim("phone_number").as_string());
-      output.add("role", it->first);
+      output.add("role", it->second.name());
       return output;
     } else {
       throw std::runtime_error("kid not trusted");
