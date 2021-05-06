@@ -278,7 +278,6 @@ private:
     auto const& ep = socket_.remote_endpoint();
     errlog << "request error [" << ep << "]: " << e.what();
     errlog << boost::current_exception_diagnostic_information();
-    errlog << boost::stacktrace::stacktrace();
     eresponse_.result(status);     // HTTP error code (=/= 200)
     eresponse_.keep_alive(false);  // disconnect
     eresponse_.prepare_payload();  // serialize

@@ -95,7 +95,7 @@ ADD . /code
 
 # build the code
 RUN cd /code && rm -rf build && mkdir build && cd build && \ 
-  cmake .. && make turbo_server -j$(nproc)
+  cmake .. -DCMAKE_BUILD_TYPE=Release && make turbo_server -j$(nproc)
 
 # copy built targets 
 RUN mkdir -p /app && \

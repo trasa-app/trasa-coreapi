@@ -34,6 +34,41 @@ std::string to_string(json_t const& o) {
   return ss.str();
 }
 
+class validator
+{
+public:
+  validator(
+    std::string kid, 
+    std::string iss, 
+    std::string aud,
+    std::string cert) 
+    : kid_(kid), iss_(iss), aud_(aud)
+    , verifier_(jwt::verify()
+        .with_issuer(std::move(iss))
+        .with_audience(std::move(aud))
+        .allow_algorithm(jwt::algorithm::rs256(cert)))
+  {
+  }
+
+public:
+  std::string kid() const 
+  { return kid_; }
+
+  std::string issuer() const
+  { return iss_; }
+
+  std::string audience() const
+  { return aud_; }
+
+public:
+  void verify(jwt::decoded_jwt<jwt::picojson_traits> const& token) const 
+  { verifier_.verify(token); }
+
+private:
+  std::string kid_, iss_, aud_;
+  jwt::verifier<jwt::default_clock, jwt::picojson_traits> verifier_;
+};
+
 std::stringstream download_string(std::string url) 
 { 
   std::shared_ptr<CURL> curl(
@@ -59,57 +94,36 @@ std::stringstream download_string(std::string url)
   }
 }
 
-std::vector<std::pair<std::string, std::string>> get_remote_keys(std::string url) {
-  json_t keys;
-  std::vector<std::pair<std::string, std::string>> output;
-  auto instream = download_string(url);
-  boost::property_tree::read_json(instream, keys);
-  for (auto const& key: keys) {
-    output.emplace_back(key.first, key.second.get_value<std::string>());
-  }
-  return output;
-}
-
-std::vector<std::pair<std::string, std::string>> read_keyset(json_t const& entry) {
+std::vector<validator> read_validator(json_t const& entry) {
   if (entry.get<std::string>("type") != "jwt-rs256") {
     fatallog << "unsupported auth method: "
              << entry.get<std::string>("type");
     throw std::runtime_error("unsupported auth method");
   }
 
+  std::vector<validator> output;
   if (entry.get_child("keys").size() == 0) {
-    return get_remote_keys(entry.get<std::string>("keys"));
-  } else {
-    std::vector<std::pair<std::string, std::string>> output;
-    for (auto const& key: entry.get_child("keys")) {
-      output.emplace_back(key.first, key.second.get_value<std::string>());
+    json_t keys;
+    auto instream = download_string(entry.get<std::string>("keys"));
+    boost::property_tree::read_json(instream, keys);
+    for (auto const& key: keys) {
+      output.emplace_back(
+        key.first, 
+        entry.get<std::string>("issuer"),
+        entry.get<std::string>("audience"),
+        key.second.get_value<std::string>());
     }
-    return output;
+  } else {
+    for (auto const& key: entry.get_child("keys")) {
+      output.emplace_back(
+        key.first, 
+        entry.get<std::string>("issuer"),
+        entry.get<std::string>("audience"),
+        key.second.get_value<std::string>());
+    }
   }
+  return output;
 }
-
-class validator
-{
-public:
-  validator(std::string kid, std::string cert) 
-    : kid_(kid)
-    , verifier_(jwt::verify()
-        .allow_algorithm(jwt::algorithm::rs256(cert)))
-  {
-  }
-
-public:
-  std::string kid() const 
-  { return kid_; }
-
-public:
-  bool authorize(jwt::decoded_jwt<jwt::picojson_traits> const& token) const 
-  { verifier_.verify(token); return true; }
-
-private:
-  std::string kid_;
-  jwt::verifier<jwt::default_clock, jwt::picojson_traits> verifier_;
-};
 
 class auth::impl 
 {
@@ -118,9 +132,8 @@ public:
   {
     for (auto const& keyset: cfg) {
       try {
-        for (auto const& entry: read_keyset(keyset.second)) {
-          validator parsed(entry.first, entry.second);
-          keys_.emplace(parsed.kid(), parsed);
+        for (auto const& v: read_validator(keyset.second)) {
+          keys_.emplace(v.kid(), v);
         }
       } catch(const std::exception& e) {
         warnlog << "failed to import auth jwk: " << e.what() 
@@ -130,7 +143,9 @@ public:
 
     assert(!keys_.empty());
     for (auto const& kv: keys_) {
-      infolog << "activated authentication key " << kv.first;
+      infolog << "activated authentication key " << kv.first
+              << " with issuer " << kv.second.issuer() 
+              << " with audience " << kv.second.audience();
     }
   }
 
@@ -139,7 +154,7 @@ public:
   { 
     auto decoded = jwt::decode(std::string(token));
     if (auto it = keys_.find(decoded.get_key_id()); it != keys_.end()) {
-      it->second.authorize(decoded);
+      it->second.verify(decoded);
 
       json_t output;
       output.add("upn", decoded.get_payload_claim("phone_number").as_string());
