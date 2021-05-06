@@ -189,7 +189,6 @@ public:
     auto const& returncode = json_result.values["code"].get<osrm::json::String>().value;
     if (status == osrm::Status::Ok && boost::iequals(returncode, "ok")) {
       auto waypointsorder = map_waypoints_order(json_result);
-      dbglog << "trip_size_3: " << trip.size();
       return optimized_trip(
         trip, waypointsorder,
         map_legs(json_result),
