@@ -40,6 +40,13 @@ namespace // detail
     return req.method() == verb::get && 
            req.target() == "/healthcheck";
   }
+
+  template <typename BodyType>
+  bool is_cors_options(http::request<BodyType> const& req)
+  {
+    return req.method() == verb::options && 
+           req.target() == "/";
+  }
 }
 
 /**
@@ -202,6 +209,9 @@ private:
       if (is_healthcheck(req)) {
         confirm_healthcheck();
         return;
+      } else if (is_cors_options(req)) { 
+        cors_headers_response();
+        return;
       } else {
         // respond with HTTP error 405 and terminate connection.
         errlog << "unsupported request method: " 
@@ -263,12 +273,15 @@ private:
     boost::property_tree::write_json(outss, resjson);
 
     // we have a valid response
-    response_.keep_alive(false);
+    response_.keep_alive(true);
+    response_.set(field::access_control_allow_origin, "*");
+    response_.set(field::access_control_allow_headers, "authorization, content-type");
+    response_.set(field::access_control_allow_methods, "post");
+    response_.set(field::access_control_allow_credentials, "true");
     response_.set(field::content_type, "application/json; charset=utf-8");
     response_.body() = outss.str();
     response_.prepare_payload();
-    http::async_write(socket_, response_, [this](error_code ec, size_t) {
-      socket_.shutdown(ip::tcp::socket::shutdown_send, ec);
+    http::async_write(socket_, response_, [this](error_code, size_t) {
       do_accept();
     });
   }
@@ -281,12 +294,11 @@ private:
     errlog << "request error [" << ep << "]: " << e.what();
     errlog << boost::current_exception_diagnostic_information();
     eresponse_.result(status);     // HTTP error code (=/= 200)
-    eresponse_.keep_alive(false);  // disconnect
+    eresponse_.keep_alive(true);  // disconnect
     eresponse_.prepare_payload();  // serialize
     http::async_write(
         socket_, eresponse_,
-        [this, cont = std::forward<Then>(cont)](error_code error, size_t) {
-          socket_.shutdown(ip::tcp::socket::shutdown_send, error);
+        [this, cont = std::forward<Then>(cont)](error_code, size_t) {
           cont();
         });
   }
@@ -295,13 +307,27 @@ private:
   void confirm_healthcheck()
   {
     auto const& ep = socket_.remote_endpoint();
-    infolog << "health check from " << ep << ": ok";
+    dbglog << "health check from " << ep << ": ok";
     auto checkresponse = std::make_shared<response<empty_body>>();
     checkresponse->result(http::status::ok);
     checkresponse->keep_alive(false);
     http::async_write(socket_, *checkresponse, 
-      [this, checkresponse](error_code error, size_t) {
-        socket_.shutdown(ip::tcp::socket::shutdown_both, error);
+      [this, checkresponse](error_code, size_t) {
+        do_accept();
+      });
+  }
+
+  void cors_headers_response()
+  {
+    auto corsresponse = std::make_shared<response<empty_body>>();
+    corsresponse->result(http::status::ok);
+    corsresponse->keep_alive(true);
+    corsresponse->set(field::access_control_allow_origin, "*");
+    corsresponse->set(field::access_control_allow_headers, "authorization, content-type");
+    corsresponse->set(field::access_control_allow_methods, "post");
+    corsresponse->set(field::access_control_allow_credentials, "true");
+    http::async_write(socket_, *corsresponse, 
+      [this, corsresponse](error_code, size_t) {
         do_accept();
       });
   }
