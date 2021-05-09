@@ -15,23 +15,23 @@
 namespace sentio::logging
 {
 
-void init(json_t const& config)
+void init(json_t const&)
 {
-  using namespace boost::log;
-  namespace expr = boost::log::expressions; 
+//   using namespace boost::log;
+//   namespace expr = boost::log::expressions; 
 
-  auto core = core::get();
-  auto backend = boost::make_shared<sinks::text_ostream_backend>();
+//   auto core = core::get();
+//   auto backend = boost::make_shared<sinks::text_ostream_backend>();
 
-  backend->add_stream(boost::shared_ptr<std::ostream>(
-    &std::clog, boost::null_deleter()));
-  backend->auto_flush(config.get<bool>("dev"));
+//   backend->add_stream(boost::shared_ptr<std::ostream>(
+//     &std::clog, boost::null_deleter()));
+//   backend->auto_flush(config.get<bool>("dev"));
 
-  auto sink = boost::make_shared<
-    sinks::synchronous_sink<
-      sinks::text_ostream_backend
-    >>(backend);
-  core->add_sink(sink);
+//   auto sink = boost::make_shared<
+//     sinks::synchronous_sink<
+//       sinks::text_ostream_backend
+//     >>(backend);
+//   core->add_sink(sink);
 }
 
 }
