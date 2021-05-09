@@ -9,10 +9,6 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <boost/core/null_deleter.hpp>
-
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
 
 #include "rpc/server.h"
 #include "spacial/index.h"
@@ -28,11 +24,12 @@
 #include "utils/log.h"
 #include "utils/future.h"
 
-enum exec_role {
-  none    = 0x00,
-  rpc     = 0x01, 
-  worker  = 0x02, 
-  both = rpc | worker,
+struct exec_role {
+  using type = const char*;
+  static constexpr type none = "none";
+  static constexpr type rpc = "rpc";
+  static constexpr type worker = "worker";
+  static constexpr type both = "both";
 };
 
 auto download_regions(std::vector<sentio::import::region_paths> const& sources)
@@ -57,16 +54,16 @@ auto download_regions(std::vector<sentio::import::region_paths> const& sources)
   return output;
 }
 
-exec_role read_role(int argc, const char** argv)
+exec_role::type read_role(int argc, const char** argv)
 {
   if (argc == 3) {
-    if (boost::iequals(argv[2], "rpc")) {
+    if (boost::iequals(argv[2], exec_role::rpc)) {
       return exec_role::rpc;
-    } else if (boost::iequals(argv[2], "worker")) {
+    } else if (boost::iequals(argv[2], exec_role::worker)) {
       return exec_role::worker;
-    } else if (boost::iequals(argv[2], "both")) {
+    } else if (boost::iequals(argv[2], exec_role::both)) {
       return exec_role::both;
-    } else if (boost::iequals(argv[2], "none")) {
+    } else if (boost::iequals(argv[2], exec_role::none)) {
       return exec_role::none;
     } else {
       throw std::invalid_argument(
@@ -131,25 +128,6 @@ std::thread start_worker_server(
   });
 }
 
-void init_logging()
-{
-  using namespace boost::log;
-  namespace expr = boost::log::expressions; 
-
-  auto core = core::get();
-  auto backend = boost::make_shared<sinks::text_ostream_backend>();
-
-  backend->add_stream(boost::shared_ptr<std::ostream>(
-    &std::clog, boost::null_deleter()));
-  backend->auto_flush(true);
-
-  auto sink = boost::make_shared<
-    sinks::synchronous_sink<
-      sinks::text_ostream_backend
-    >>(backend);
-  core->add_sink(sink);
-}
-
 int main(int argc, const char** argv)
 {
   using namespace sentio::utils;
@@ -162,17 +140,18 @@ int main(int argc, const char** argv)
     return 1;
   }
 
-  init_logging();
-
   try {
     // check how we are going to start this instance of
     // the executable.
-    exec_role role = read_role(argc, argv);
+    exec_role::type role = read_role(argc, argv);
     infolog << "running in role: " << role;
 
     // this holds rpc config, regions config, aws, etc.
     boost::property_tree::ptree systemconfig;
     boost::property_tree::read_json(argv[1], systemconfig);
+
+    // initialize system logging
+    sentio::logging::init(systemconfig.get_child("logging"));
 
     // initialize aws api and configure resource names
     sentio::aws::init(systemconfig.get_child("aws"));
@@ -194,7 +173,7 @@ int main(int argc, const char** argv)
     // of the roles.
     std::list<std::thread> rolethreads;
 
-    if (role & exec_role::rpc) {
+    if (role == exec_role::rpc || role == exec_role::both) {
       infolog << "starting rpc role";
       // this means that this node will respond to RPC 
       // requests over HTTP.
@@ -202,7 +181,7 @@ int main(int argc, const char** argv)
         start_rpc_server(systemconfig, extracted_sources));
     }
 
-    if (role & exec_role::worker) {
+    if (role == exec_role::worker || role == exec_role::both) {
       infolog << "starting worker role";
       // this means that this node will poll the work queue
       // for outstanding trip optimization requests and compute

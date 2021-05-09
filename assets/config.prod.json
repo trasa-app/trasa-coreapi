@@ -45,6 +45,9 @@
   "geocoder": {
     "mode": "sqlite_fts"
   },
+  "logging": {
+    "dev": true
+  },
   "regions": [
     {
       "enabled": true,

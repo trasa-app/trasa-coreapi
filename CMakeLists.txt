@@ -154,6 +154,7 @@ add_library(trasa
 
   source/model/address.cc
 
+  source/utils/log.cc
   source/utils/aws.cc
   source/utils/datetime.cc)
 
