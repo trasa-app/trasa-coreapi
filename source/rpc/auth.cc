@@ -164,7 +164,7 @@ public:
 
       json_t output;
       output.add("upn", decoded.get_payload_claim("phone_number").as_string());
-      output.add("role", it->second.name());
+      output.add("idp", it->second.name());
       return output;
     } else {
       throw std::runtime_error("kid not trusted");

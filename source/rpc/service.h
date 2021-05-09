@@ -15,8 +15,8 @@ namespace sentio::rpc
 
 struct context 
 {
-  std::optional<std::string> uid;
-  std::optional<std::string> role;
+  std::string uid; // user id
+  std::string idp; // identity provider
   boost::asio::ip::tcp::endpoint remote_ep;
 };
 

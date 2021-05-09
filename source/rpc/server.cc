@@ -187,7 +187,7 @@ private:
     if (auto decoded = guard_.authorize(tokenview); decoded.has_value()) {
       return context {
         .uid = decoded->get<std::string>("upn"),
-        .role = decoded->get<std::string>("role"),
+        .idp = decoded->get<std::string>("idp"),
         .remote_ep = socket.remote_endpoint()
       };
     } else {
@@ -245,19 +245,10 @@ private:
       throw bad_method(method.c_str());
     }
 
-    context request_context;
-
-    // if the service requires authenticated token
-    if (svcit->second->authenticated()) {
-      // ensure user has a valid jwt token in case the
-      // service required authenticated requests.
-      // exrtract the userid from the payload
-      request_context = get_context_from_token(socket_, req.base());
-    } else {
-      // no creds or role, just the remote ep
-      request_context.remote_ep = socket_.remote_endpoint();
-    }
-    
+    // authentication & authorization
+    context request_context(
+      get_context_from_token(
+        socket_, req.base()));
 
     // getting here means that we have a valid JSON-RPC request and
     // that there is a registered handler for the requested method.

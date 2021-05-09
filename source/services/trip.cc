@@ -84,7 +84,7 @@ json_t trip_service::poll::invoke(json_t params, rpc::context ctx) const
   }
 
   auto const& accountidval = item.find("accountid")->second;
-  if (!boost::iequals(ctx.uid.value(), accountidval.GetS())) {
+  if (!boost::iequals(ctx.uid, accountidval.GetS())) {
     throw rpc::not_authorized();
   }
 
@@ -124,7 +124,7 @@ json_t trip_service::async::invoke(json_t params, rpc::context ctx) const
   auto tripregion = locator().locate(creation_location);
 
   try {
-    params.add("meta.accountid", ctx.uid.value());
+    params.add("meta.accountid", ctx.uid);
     params.add("meta.create_at", current_iso_datetime_string());
     params.add("meta.region", tripregion->name());
     request.emplace(std::move(params));
@@ -179,7 +179,7 @@ json_t trip_service::sync::invoke(json_t params, rpc::context ctx) const
 
   try {
     params.add("meta.id", "s_" + random_string(16));
-    params.add("meta.accountid", ctx.uid.value());
+    params.add("meta.accountid", ctx.uid);
     params.add("meta.createdat", current_iso_datetime_string());
     params.add("meta.region", tripregion->name());
     request.emplace(std::move(params));
