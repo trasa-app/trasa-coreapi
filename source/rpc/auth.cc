@@ -99,7 +99,7 @@ std::stringstream download_string(std::string url)
 }
 
 std::vector<validator> read_validator(json_t const& entry) {
-  if (entry.get<std::string>("type") != "jwt-rs256") {
+  if (entry.get<std::string>("type") != "jwt+rs256") {
     fatallog << "unsupported auth method: "
              << entry.get<std::string>("type");
     throw std::runtime_error("unsupported auth method");
