@@ -125,6 +125,7 @@ add_library(trasa
   source/rpc/auth.cc
   source/rpc/error.cc
   source/rpc/server.cc
+  source/rpc/websocket.cc
 
   source/routing/trip.cc
   source/routing/worker.cc
