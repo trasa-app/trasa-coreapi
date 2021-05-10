@@ -17,12 +17,10 @@ class websocket_session
   : public std::enable_shared_from_this<websocket_session>
 {
 public:
-  using buffer_type = boost::beast::flat_buffer;
   using socket_type = boost::asio::ip::tcp::socket;
-  using stream_type = boost::beast::websocket::stream<boost::beast::tcp_stream>;
-
+  
 public:
-  const size_t max_message_size = 4 * 1024 * 1024; // 4MB
+  static constexpr size_t max_message_size = 4 * 1024 * 1024; // 4MB
 
 public:
   /**
@@ -34,18 +32,14 @@ public:
     auth const& guard,
     service_map_t const& services,
     boost::asio::io_context& ioctx);
+  ~websocket_session();
 
 public:
   void start();
 
 private:
-  stream_type ws_;
-  buffer_type buffer_;
-
-private:
-  auth const& guard_;
-  service_map_t const& services_;
-  boost::asio::io_context& ioctx_;
+  class impl;
+  std::unique_ptr<impl> impl_;
 };
 
 
@@ -57,15 +51,15 @@ public:
     auth const& guard,
     service_map_t const& services,
     boost::asio::io_context& ioctx);
+  ~websocket_server();
 
 public:
   void start();
 
 private:
-  auth const& guard_;
-  service_map_t const& services_;
-  boost::asio::io_context& ioctx_;
-  boost::asio::ip::tcp::acceptor acceptor_;
+  class impl;
+  std::unique_ptr<impl> impl_;
+
 };
 
 }

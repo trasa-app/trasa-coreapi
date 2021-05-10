@@ -37,17 +37,41 @@ std::string to_string(json_t const& o) {
 class validator
 {
 public:
+  static validator rs256(
+    std::string kid,
+    std::string name, 
+    std::string iss, 
+    std::string aud,
+    std::string cert)
+  {
+    return validator(kid, name, iss, aud, 
+      jwt::algorithm::rs256(cert));
+  }
+
+  static validator hs256(
+    std::string kid,
+    std::string name, 
+    std::string iss, 
+    std::string aud,
+    std::string key)
+  {
+    return validator(kid, name, iss, aud, 
+      jwt::algorithm::hs256(key));
+  }
+
+private:
+  template <typename Algorithm>
   validator(
     std::string kid,
     std::string name, 
     std::string iss, 
     std::string aud,
-    std::string cert) 
+    Algorithm algo) 
     : kid_(kid), iss_(iss), aud_(aud), name_(name)
     , verifier_(jwt::verify()
         .with_issuer(std::move(iss))
         .with_audience(std::move(aud))
-        .allow_algorithm(jwt::algorithm::rs256(cert)))
+        .allow_algorithm(algo))
   {
   }
 
@@ -99,7 +123,13 @@ std::stringstream download_string(std::string url)
 }
 
 std::vector<validator> read_validator(json_t const& entry) {
-  if (entry.get<std::string>("type") != "jwt+rs256") {
+  auto construct = validator::rs256;
+
+  if (entry.get<std::string>("type") == "jwt+rs256") {
+    construct = validator::rs256;
+  } else if (entry.get<std::string>("type") == "jwt+hs256") {
+    construct = validator::hs256;
+  } else {
     fatallog << "unsupported auth method: "
              << entry.get<std::string>("type");
     throw std::runtime_error("unsupported auth method");
@@ -111,21 +141,21 @@ std::vector<validator> read_validator(json_t const& entry) {
     auto instream = download_string(entry.get<std::string>("keys"));
     boost::property_tree::read_json(instream, keys);
     for (auto const& key: keys) {
-      output.emplace_back(
+      output.push_back(construct(
         key.first, 
         entry.get<std::string>("name"),
         entry.get<std::string>("issuer"),
         entry.get<std::string>("audience"),
-        key.second.get_value<std::string>());
+        key.second.get_value<std::string>()));
     }
   } else {
     for (auto const& key: entry.get_child("keys")) {
-      output.emplace_back(
+      output.push_back(construct(
         key.first, 
         entry.get<std::string>("name"),
         entry.get<std::string>("issuer"),
         entry.get<std::string>("audience"),
-        key.second.get_value<std::string>());
+        key.second.get_value<std::string>()));
     }
   }
   return output;

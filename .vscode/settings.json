@@ -75,7 +75,8 @@
     "numbers": "cpp",
     "semaphore": "cpp",
     "syncstream": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "shared_mutex": "cpp"
   },
   "cmake.configureOnOpen": true
 }

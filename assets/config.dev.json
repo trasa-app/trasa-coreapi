@@ -9,6 +9,15 @@
         "issuer": "https://securetoken.google.com/trasa-7c6ab",
         "audience": "trasa-7c6ab",
         "keys": "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+      },
+      {
+        "type": "jwt+hs256",
+        "name": "dev-api-key-1",
+        "issuer": "coreapi@trasa.engineering",
+        "audience": "staff@trasa.engineering",
+        "keys": {
+            "coreapi@trasa.engineering": "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV"
+          }
       }
     ],
     "interfaces": [

@@ -4,6 +4,9 @@
 
 #include "websocket.h"
 #include "utils/log.h"
+
+#include <list>
+#include <thread>
 #include <boost/beast/websocket.hpp>
 
 namespace sentio::rpc
@@ -14,11 +17,34 @@ namespace web = boost::beast;
 namespace ws = web::websocket;
 using tcp = net::ip::tcp;
 
-websocket_session::websocket_session(
-  websocket_session::socket_type&& socket,
-  auth const& guard,
-  service_map_t const& services,
-  boost::asio::io_context& ioctx)
+/**
+ * Handles the state needed to maintain a connection with a connected client.
+ * This data structure is maintained for each open connection, so be conservative
+ * with the size and memory layout of this structure.
+ */
+class websocket_session::impl
+{
+private:  // types
+  /**
+   * This type of body is used only to signal HTTP error
+   * using status codes only and no content.
+   */
+  using error_body_t = web::http::empty_body;
+
+  /**
+   * JSON-RPC is always in text format using POST method.
+   */
+  using string_body_t = web::http::string_body;
+
+  using buffer_type = web::flat_buffer;
+  using stream_type = web::websocket::stream<web::tcp_stream>;
+
+public:
+  impl(
+    socket_type&& socket,
+    auth const& guard,
+    service_map_t const& services,
+    boost::asio::io_context& ioctx)
   : ws_(std::move(socket))
   , guard_(guard)
   , services_(services)
@@ -30,41 +56,57 @@ websocket_session::websocket_session(
   pmd.compLevel = 3;
   ws_.set_option(pmd);
   ws_.auto_fragment(false);
-  ws_.read_message_max(max_message_size);
+  ws_.read_message_max(websocket_session::max_message_size);
 }
 
-void websocket_session::start()
-{
-  ws_.set_option(
+public:
+  void start()
+  {
+    ws_.set_option(
     ws::stream_base::timeout::suggested(
       web::role_type::server));
 
 
-  ws_.async_accept(boost::beast::bind_front_handler(
-    [](auto) {
-      //todo
-    }));
-}
+    ws_.async_accept(boost::beast::bind_front_handler(
+      [](auto) {
+        //todo
+      }));
+  }
 
-websocket_server::websocket_server(
-  tcp::endpoint ep,
-  auth const& guard,
-  service_map_t const& services,
-  net::io_context& ioctx)
+private:
+  stream_type ws_;
+  buffer_type buffer_;
+
+private:
+  auth const& guard_;
+  service_map_t const& services_;
+  boost::asio::io_context& ioctx_;
+};
+
+
+class websocket_server::impl
+{
+public:
+  impl(
+    tcp::endpoint ep,
+    auth const& guard,
+    service_map_t const& services,
+    net::io_context& ioctx)
   : guard_(guard)
   , services_(services)
   , ioctx_(ioctx)
   , acceptor_(ioctx_)
-{ 
+{
   acceptor_.open(ep.protocol());
   acceptor_.set_option(net::socket_base::reuse_address(true));
   acceptor_.bind(ep);
   acceptor_.listen(net::socket_base::max_listen_connections);
 }
 
-void websocket_server::start()
-{
-  acceptor_.async_accept(
+public:
+  void start()
+  {
+    acceptor_.async_accept(
     [this](web::error_code ec, tcp::socket socket) {
       if (ec) {
         errlog << "ip connection accept error: " << ec.message();
@@ -77,6 +119,39 @@ void websocket_server::start()
       }
       start();
     });
-}
+  }
+
+private:
+  auth const& guard_;
+  service_map_t const& services_;
+  boost::asio::io_context& ioctx_;
+  boost::asio::ip::tcp::acceptor acceptor_;
+};
+
+websocket_session::~websocket_session() {}
+websocket_session::websocket_session(
+  websocket_session::socket_type&& socket,
+  auth const& guard,
+  service_map_t const& services,
+  boost::asio::io_context& ioctx)
+  : impl_(std::make_unique<impl>(
+      std::move(socket), 
+      guard, services, ioctx))
+{ }
+
+void websocket_session::start()
+{ impl_->start(); }
+
+websocket_server::~websocket_server() {}
+websocket_server::websocket_server(
+  tcp::endpoint ep,
+  auth const& guard,
+  service_map_t const& services,
+  net::io_context& ioctx)
+  : impl_(std::make_unique<impl>(ep, guard, services, ioctx))
+{ }
+
+void websocket_server::start()
+{ impl_->start(); }
 
 }

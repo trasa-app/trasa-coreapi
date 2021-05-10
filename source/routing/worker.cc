@@ -115,11 +115,9 @@ void start_routing_worker(config const& config,
     config.worker_concurrency;
 
   infolog << "using trip requests queue: " 
-            << aws::resources().queues.pending_routes
-           ;
+          << aws::resources().queues.pending_routes;
   infolog << "starting " << worker_count 
-            << " routing worker therads"
-           ;
+          << " routing worker therads";
 
   std::list<std::thread> workers;
   for (size_t i = 0; i < worker_count; ++i) {
@@ -127,7 +125,7 @@ void start_routing_worker(config const& config,
       while (true) {
         auto nextrequest = scheduler.poll_trip_request();
         if (!nextrequest.has_value()) {
-          std::this_thread::sleep_for(std::chrono::seconds(2));
+          std::this_thread::sleep_for(std::chrono::seconds(5));
           continue;
         }
 

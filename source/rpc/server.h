@@ -43,7 +43,7 @@ struct config {
 
   /**
    * The port on which this server will be running.
-   * The default value is 5000.
+   * The default value is 5001.
    */
   uint16_t listen_port;
 

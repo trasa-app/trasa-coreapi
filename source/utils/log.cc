@@ -5,11 +5,11 @@
 #include "log.h"
 #include "json.h"
 
-#include <iostream>
-#include <boost/core/null_deleter.hpp>
+// #include <iostream>
+// #include <boost/core/null_deleter.hpp>
 
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
+// #include <boost/log/sinks/sync_frontend.hpp>
+// #include <boost/log/sinks/text_ostream_backend.hpp>
 
 
 namespace sentio::logging
