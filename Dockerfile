@@ -40,6 +40,7 @@ RUN apt-get install -y \
   autoconf \
   automake \
   libtool \
+  libicu-dev \
   binutils \
   unzip \
   libexpat1-dev \
