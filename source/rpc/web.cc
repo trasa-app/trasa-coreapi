@@ -86,11 +86,11 @@ public:
   , services_(services)
   , ioctx_(*socket_.get_executor().target<net::io_context>())
 {
-  dbglog << "web session started";
+  tracelog << "web session started";
 }
 
 ~web_session()
-{ dbglog << "web session destructed"; }
+{ tracelog << "web session destructed"; }
 
 public:
   void start()
@@ -162,7 +162,7 @@ private:
       json_t parsed_request;
       std::stringstream ss;
       ss.write((char*)ibuffer_.data().data(), ibuffer_.data().size());
-      dbglog << "ws content: " << ss.str();
+      tracelog << "ws request: " << ss.str();
       boost::property_tree::read_json(ss, parsed_request);
       output = invoke_rpc_method(parsed_request, *wsctx_);
     } catch (std::exception const& e) {
@@ -174,7 +174,7 @@ private:
     std::stringstream ssout;
     boost::property_tree::write_json(ssout, output);
     std::string serialized = ssout.str();
-    dbglog << "ws out content: " << serialized;
+    tracelog << "ws response: " << serialized;
     
     auto write = obuffer_.prepare(serialized.size());
     std::copy(serialized.begin(), serialized.end(), 

@@ -23,6 +23,6 @@ jobs:
           aws-region: eu-central-1
           
       - name: Build Server Executable
-        uses: docker/build-push-action@v2
-        with:
-          push: false
+        id: build-image
+        run: |
+          docker build .
