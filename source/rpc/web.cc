@@ -210,14 +210,18 @@ private:
 
       std::stringstream outss;
       boost::property_tree::write_json(outss, rpcresult);
-      response_.keep_alive(request_.keep_alive());
+      
       response_.body() = outss.str();
       apply_cors_headers(response_);
+      response_.keep_alive(false);
+      response_.set(
+        web::http::field::content_type, 
+        "application/json; charset=utf-8");
       response_.prepare_payload();
 
       web::http::async_write(socket_, response_, 
         web::bind_front_handler(
-          &web_session::http_start, 
+          &web_session::http_close,
           shared_from_this()));
 
     } else if (web::websocket::is_upgrade(request_)) {
@@ -274,7 +278,7 @@ private:
     auto const& ep = socket_.remote_endpoint();
     dbglog << "health check from " << ep << ": ok";
     eresponse_.result(web::http::status::ok);
-    eresponse_.keep_alive(request_.keep_alive());
+    eresponse_.keep_alive(false);
     web::http::async_write(socket_, eresponse_, 
       web::bind_front_handler(
         &web_session::http_close, 
@@ -284,7 +288,7 @@ private:
   void cors_headers_response()
   {
     eresponse_.result(web::http::status::ok);
-    eresponse_.keep_alive(true);
+    eresponse_.keep_alive(false);
     apply_cors_headers(eresponse_);
 
     web::http::async_write(socket_, eresponse_, 
@@ -354,12 +358,14 @@ private:
   {
     if (ec) {
       errlog << "ws error: " << ec.message();
-      obuffer_.clear();
-      ibuffer_.clear();
-      ws_async_read();
-    } else {
-      obuffer_.consume(n);
-      ws_async_read();
+    }
+
+    //obuffer_.consume(n);
+    obuffer_.clear(); 
+    ibuffer_.clear();
+
+    if (ws_->is_open()) { 
+      ws_async_read(); 
     }
   }
 
@@ -386,7 +392,7 @@ private:
     errlog << "request error [" << ep << "]: " << e.what();
     errlog << boost::current_exception_diagnostic_information();
     eresponse_.result(status);     // HTTP error code (=/= 200)
-    eresponse_.keep_alive(true);  // disconnect
+    eresponse_.keep_alive(false);  // disconnect
     apply_cors_headers(eresponse_);
     eresponse_.prepare_payload();  // serialize
 
