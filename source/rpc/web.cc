@@ -210,7 +210,7 @@ private:
 
       std::stringstream outss;
       boost::property_tree::write_json(outss, rpcresult);
-      response_.keep_alive(true);
+      response_.keep_alive(request_.keep_alive());
       response_.body() = outss.str();
       apply_cors_headers(response_);
       response_.prepare_payload();
@@ -274,10 +274,10 @@ private:
     auto const& ep = socket_.remote_endpoint();
     dbglog << "health check from " << ep << ": ok";
     eresponse_.result(web::http::status::ok);
-    eresponse_.keep_alive(false);
+    eresponse_.keep_alive(request_.keep_alive());
     web::http::async_write(socket_, eresponse_, 
       web::bind_front_handler(
-        &web_session::http_start, 
+        &web_session::http_close, 
         shared_from_this()));
   }
 
@@ -372,6 +372,9 @@ private:
       ws_async_read();
     }
   }
+  
+  void http_close(web::error_code, size_t)
+  { socket_.close(); }
 
 
   template <typename Exception>
