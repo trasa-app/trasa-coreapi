@@ -10,7 +10,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include "rpc/web.h"
 #include "rpc/server.h"
+
 #include "spacial/index.h"
 #include "import/map_source.h"
 
@@ -73,49 +75,40 @@ exec_role::type read_role(int argc, const char** argv)
   return exec_role::none; // default
 }
 
-std::thread start_rpc_server(
-  boost::property_tree::ptree const& systemconfig,
+
+sentio::rpc::service_map_t create_services(
+  json_t const& systemconfig,
+  sentio::spacial::index const& worldix,
   std::vector<sentio::import::region_paths> const& sources)
 {
   using namespace sentio::rpc;
   using namespace sentio::services;
+  
 
-  return std::thread([&]{
-    sentio::spacial::index worldix(sources);
-    // this is the set of configs needed to expose JSON-RPC endpoints over http.
-    sentio::rpc::config rpcconfig{
-      .listen_ip = systemconfig.get<std::string>("rpc.address"),
-      .listen_port = systemconfig.get<uint16_t>("rpc.port"),
-      .guard = systemconfig.get_child("rpc.auth")};
-    sentio::rpc::service_map_t svcmap;
+  sentio::rpc::service_map_t svcmap;
 
-    // svcmap.emplace("trip.poll",   
-    //   create_service(trip_service::poll(
-    //     systemconfig.get_child("routing"), worldix)));
+  // svcmap.emplace("trip.poll",   
+  //   create_service(trip_service::poll(
+  //     systemconfig.get_child("routing"), worldix)));
 
-    // svcmap.emplace("trip.async",
-    //   create_service(trip_service::async(
-    //     systemconfig.get_child("routing"), worldix)));
+  // svcmap.emplace("trip.async",
+  //   create_service(trip_service::async(
+  //     systemconfig.get_child("routing"), worldix)));
 
-    svcmap.emplace("trip",
-      create_service(trip_service::sync(
-        systemconfig.get_child("routing"), worldix, sources)));
-    
-    svcmap.emplace("geocode", 
-      create_service(geocoder_service(worldix, sources,
-        systemconfig.get_child("geocoder"))));
-    
-    svcmap.emplace("distance", 
-      create_service(distance_service(
-        systemconfig.get_child("routing"), worldix, sources)));
+  svcmap.emplace("trip",
+    create_service(trip_service::sync(
+      systemconfig.get_child("routing"), worldix, sources)));
+  
+  svcmap.emplace("geocode", 
+    create_service(geocoder_service(worldix, sources,
+      systemconfig.get_child("geocoder"))));
+  
+  svcmap.emplace("distance", 
+    create_service(distance_service(
+      systemconfig.get_child("routing"), worldix, sources)));
 
-    // this blocks the current thread until the server terminates
-    sentio::rpc::run_server(
-      std::move(rpcconfig), 
-      std::move(svcmap));
-  });
+  return svcmap;
 }
-
 
 std::thread start_worker_server(
   boost::property_tree::ptree const& systemconfig,
@@ -139,6 +132,9 @@ int main(int argc, const char** argv)
               << std::endl;
     return 1;
   }
+
+  BOOST_LOG_SCOPED_THREAD_TAG("tid", 
+    sentio::logging::assign_thread_id());
 
   try {
     // check how we are going to start this instance of
@@ -168,21 +164,38 @@ int main(int argc, const char** argv)
     auto extracted_sources = extract_osrm_packages(sources);
     infolog << "extracted " << extracted_sources.size() << " regions";
 
+    if (role == exec_role::none) {
+      return 0;
+    }
+
+    sentio::spacial::index worldix(sources);
+    auto services = create_services(
+      systemconfig, worldix, extracted_sources);
+
+    // this is the set of configs needed to expose JSON-RPC endpoints over http.
+    sentio::rpc::config rpcconfig{
+      .listen_ip = systemconfig.get<std::string>("rpc.address"),
+      .listen_port = systemconfig.get<uint16_t>("rpc.port"),
+      .guard = systemconfig.get_child("rpc.auth")};
+
     // depending on the enabled roles for this instance, this
     // will have either one or two main threads, each for one
     // of the roles.
     std::list<std::thread> rolethreads;
 
     if (role == exec_role::rpc || role == exec_role::both) {
-      infolog << "starting rpc role";
-      // this means that this node will respond to RPC 
-      // requests over HTTP.
-      rolethreads.emplace_back(
-        start_rpc_server(systemconfig, extracted_sources));
+      // this means that this node will respond 
+      // to JSON-RPC requests over WebSockets.
+      rolethreads.emplace_back([&rpcconfig, &services]() {
+        BOOST_LOG_SCOPED_THREAD_TAG("tid", 
+          sentio::logging::assign_thread_id());
+        infolog << "starting web rpc role";
+        sentio::rpc::web_server(rpcconfig, services).start();
+      });
     }
 
     if (role == exec_role::worker || role == exec_role::both) {
-      infolog << "starting worker role";
+      infolog << "starting sqs worker role";
       // this means that this node will poll the work queue
       // for outstanding trip optimization requests and compute
       // optimized routes then store them in dynamodb.

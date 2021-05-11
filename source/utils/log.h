@@ -5,7 +5,9 @@
 #pragma once
 
 #include "json.h"
+
 #include <boost/log/trivial.hpp>
+#include <boost/log/attributes/scoped_attribute.hpp>
 
 #define tracelog BOOST_LOG_TRIVIAL(trace)
 #define dbglog BOOST_LOG_TRIVIAL(debug)
@@ -14,8 +16,8 @@
 #define errlog BOOST_LOG_TRIVIAL(error)
 #define fatallog BOOST_LOG_TRIVIAL(fatal)
 
-
 namespace sentio::logging
 {
+  size_t assign_thread_id();
   void init(json_t const& config);
 }

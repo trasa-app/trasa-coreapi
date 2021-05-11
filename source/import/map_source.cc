@@ -203,6 +203,8 @@ std::future<std::string> save_s3_object_async(Aws::S3::S3Client const& s3client,
                                               std::string const& s3uri)
 {
   return std::async([&s3client, &s3uri]() {
+    BOOST_LOG_SCOPED_THREAD_TAG("tid", 
+      sentio::logging::assign_thread_id());
     auto request = make_s3_content_request(s3uri);
     
     // retreive remote object etag only without content
@@ -291,14 +293,14 @@ std::future<region_paths> region_paths::download_async(
     s3client = Aws::S3::S3Client(cfg);
   });
 
-  infolog << "starting region data download for " << rp.name;
+  dbglog << "starting region data download for " << rp.name;
   return std::async([rp = std::move(rp)]() {
+    BOOST_LOG_SCOPED_THREAD_TAG("tid", sentio::logging::assign_thread_id());
     auto ab_path = save_s3_object_async(s3client, rp.addressbook);
     auto poly_path = save_s3_object_async(s3client, rp.poly);
     auto osrm_path = save_s3_object_async(s3client, rp.osrm);
     sentio::utils::wait_for_all(ab_path, poly_path, osrm_path);
-    infolog << "region " << rp.name << " data download completed." 
-             ;
+    dbglog << "region " << rp.name << " data download completed.";
 
     try {
       return region_paths {

@@ -124,8 +124,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 add_library(trasa
   source/rpc/auth.cc
   source/rpc/error.cc
-  source/rpc/server.cc
-  source/rpc/websocket.cc
+  source/rpc/web.cc
 
   source/routing/trip.cc
   source/routing/worker.cc

@@ -143,6 +143,8 @@ std::vector<import::region_paths> extract_osrm_packages(
   std::for_each(std::execution::par_unseq,
     std::begin(sources), std::end(sources), 
     [&](auto const& source) {
+      BOOST_LOG_SCOPED_THREAD_TAG("tid", 
+          sentio::logging::assign_thread_id());
       dbglog << "extracting region " << source.name;
       // all paths remain the same except the osrm uncompressed archive
       region_paths extracted_region(source);

@@ -54,15 +54,4 @@ struct config {
   auth guard;
 };
 
-/**
- * Starts HTTP server and serves JSON-RPC methods to external consumers.
- *
- * @param ip The IP address this server will listen on. Its recommended to use
- * 0.0.0.0
- * @param port The IP port this server will listen on.
- * @param services a map of string -> handler function that implement individual
- * RPC methods.
- */
-void run_server(config config, service_map_t services);
-
 }  // namespace sentio::kurier

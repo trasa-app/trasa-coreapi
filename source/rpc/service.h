@@ -20,7 +20,6 @@ struct context
   boost::asio::ip::tcp::endpoint remote_ep;
 };
 
-
 /**
  * Base class for all JSON-RPC HTTP request handler.
  */

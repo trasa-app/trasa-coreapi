@@ -19,18 +19,6 @@
             "coreapi@trasa.engineering": "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV"
           }
       }
-    ],
-    "interfaces": [
-      {
-        "type": "http+jsonrpc",
-        "address": "0.0.0.0",
-        "port": 5001
-      },
-      {
-        "type": "ws+jsonrpc",
-        "address": "0.0.0.0",
-        "port": 5002
-      }
     ]
   },
   "aws": {

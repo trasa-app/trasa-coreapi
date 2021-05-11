@@ -8,51 +8,31 @@
       "name": "(gdb) Launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "/app/turbo_server",
+      "program": "${workspaceFolder}/build/turbo_server",
       "args": [
-        "/app/config.prod.json",
+        "${workspaceFolder}/build/product/config.dev.json",
         "rpc"
       ],
       "stopAtEntry": false,
-      "cwd": "/app",
+      "cwd": "${workspaceFolder}/build",
       "environment": [],
       "externalConsole": false,
-      "MIMode": "gdb",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceFolder}/build",
-        "pipeProgram": "docker",
-        "pipeArgs": [
-          "exec",
-          "-i",
-          "d8c0b088838d",
-          "sh",
-          "-c"
-        ],
-        "debuggerPath": "/usr/bin/gdb"
-      },
-      "sourceFileMap": {
-        "/code": "${workspaceRoot}"
-      },
-      "linux": {
-        "MIMode": "gdb",
-        "setupCommands": [
-          {
-            "description": "Enable pretty-printing for gdb",
-            "text": "-enable-pretty-printing",
-            "ignoreFailures": true
-          }
-        ]
-      },
-      "osx": {
-        "MIMode": "lldb"
-      },
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ]
+      "MIMode": "gdb"
+      // "pipeTransport": {
+      //   "pipeCwd": "${workspaceFolder}/build",
+      //   "pipeProgram": "docker",
+      //   "pipeArgs": [
+      //     "exec",
+      //     "-i",
+      //     "d8c0b088838d",
+      //     "sh",
+      //     "-c"
+      //   ],
+      //   "debuggerPath": "/usr/bin/gdb"
+      // },
+      // "sourceFileMap": {
+      //   "/code": "${workspaceRoot}"
+      // }
     }
   ]
 }
