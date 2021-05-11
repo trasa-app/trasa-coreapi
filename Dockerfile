@@ -21,7 +21,6 @@ RUN apt-get install -y \
   cmake  \
   gcc-10 \
   g++-10 \
-  libboost-all-dev \
   libssl-dev \
   libcrypto++-dev \
   zlib1g-dev \
@@ -43,9 +42,16 @@ RUN apt-get install -y \
   libtool \
   binutils \
   unzip \
+  libexpat1-dev \
   uuid-dev && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 && \
   update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+
+# install recent version of boost
+RUN mkdir -p /deps && cd /deps && \
+  git clone --branch=boost-1.76.0 --recurse-submodules https://github.com/boostorg/boost.git && \
+  cd boost && ./bootstrap.sh --prefix=/usr/local && \
+  ./b2 install variant=release link=static threading=multi
 
 # install JWT C++ header only library
 RUN mkdir -p /deps && cd /deps && \

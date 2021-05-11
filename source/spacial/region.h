@@ -5,15 +5,14 @@
 #pragma once
 
 #include <string>
-#include <boost/geometry/core/cs.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry.hpp>
 
 #include "coords.h"
 
 namespace sentio::spacial
 {
 /**
- * Represents a separate are in the spacial index. 
+ * Represents a separate area in the spacial index. 
  * This is used to separate the map into distinct submaps
  * for performance optimization purposes and geofencing.
  */

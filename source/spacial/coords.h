@@ -6,10 +6,8 @@
 
 #include <string>
 #include <vector>
-#include <boost/geometry/core/cs.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
-
 #include "utils/json.h"
 
 namespace sentio::spacial
@@ -59,4 +57,4 @@ private:
 BOOST_GEOMETRY_REGISTER_POINT_2D(
   sentio::spacial::coordinates, double,
   boost::geometry::cs::geographic<boost::geometry::degree>, 
-  longitude(), latitude());
+  longitude(), latitude())

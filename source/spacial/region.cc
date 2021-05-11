@@ -2,9 +2,10 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential. Authored by Karim Agha <karim@sentio.cloud>
 
-#include <boost/geometry/algorithms/within.hpp>
+#include <boost/geometry.hpp>
 
 #include "region.h"
+#include "coords.h"
 
 namespace sentio::spacial
 {

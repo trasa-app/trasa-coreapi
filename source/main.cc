@@ -137,17 +137,17 @@ int main(int argc, const char** argv)
     sentio::logging::assign_thread_id());
 
   try {
-    // check how we are going to start this instance of
-    // the executable.
-    exec_role::type role = read_role(argc, argv);
-    infolog << "running in role: " << role;
-
     // this holds rpc config, regions config, aws, etc.
     boost::property_tree::ptree systemconfig;
     boost::property_tree::read_json(argv[1], systemconfig);
 
     // initialize system logging
     sentio::logging::init(systemconfig.get_child("logging"));
+
+    // check how we are going to start this instance of
+    // the executable.
+    exec_role::type role = read_role(argc, argv);
+    infolog << "running in role: " << role;
 
     // initialize aws api and configure resource names
     sentio::aws::init(systemconfig.get_child("aws"));

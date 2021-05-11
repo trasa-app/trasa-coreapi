@@ -15,7 +15,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/core/null_deleter.hpp>
 
-#include <boost/log/common.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/attributes.hpp>
 #include <boost/log/sinks.hpp>
