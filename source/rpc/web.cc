@@ -172,7 +172,7 @@ private:
     }
 
     std::stringstream ssout;
-    boost::property_tree::write_json(ssout, output);
+    boost::property_tree::write_json(ssout, output, false);
     std::string serialized = ssout.str();
     tracelog << "ws response: " << serialized;
     
