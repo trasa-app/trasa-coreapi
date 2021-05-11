@@ -158,16 +158,20 @@ private:
   void process_ws_request() 
   { 
     json_t output;
+    output.add("jsonrpc", "2.0");
+
     try {
       json_t parsed_request;
       std::stringstream ss;
       ss.write((char*)ibuffer_.data().data(), ibuffer_.data().size());
       tracelog << "ws request: " << ss.str();
       boost::property_tree::read_json(ss, parsed_request);
-      output = invoke_rpc_method(parsed_request, *wsctx_);
+      if (auto id = parsed_request.get_optional<std::string>("id"); id.has_value()) {
+        output.add("id", id.value());
+      }
+      output.add_child("result", invoke_rpc_method(parsed_request, *wsctx_));
     } catch (std::exception const& e) {
       errlog << "ws process error: " << e.what();
-      output.add("jsonrpc", "2.0");
       output.add("error.message", "unspecified error");
     }
 
@@ -206,7 +210,13 @@ private:
     // are not supported.
     if (request_.method() == web::http::verb::post) {
       boost::property_tree::read_json(ss, parsed_request);
-      json_t rpcresult = invoke_rpc_method(parsed_request, request_context);
+      json_t rpcresult;
+      rpcresult.add("jsonrpc", "2.0");
+      if (auto id = parsed_request.get_optional<std::string>("id"); id.has_value()) {
+        rpcresult.add("id", id.value());
+      }
+      rpcresult.add_child("result", invoke_rpc_method(
+        parsed_request, request_context));
 
       std::stringstream outss;
       boost::property_tree::write_json(outss, rpcresult, false);
@@ -354,7 +364,7 @@ private:
     }
   }
 
-  void on_ws_write(web::error_code ec, size_t n)
+  void on_ws_write(web::error_code ec, size_t)
   {
     if (ec) {
       errlog << "ws error: " << ec.message();
