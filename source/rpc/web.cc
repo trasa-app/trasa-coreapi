@@ -209,7 +209,7 @@ private:
       json_t rpcresult = invoke_rpc_method(parsed_request, request_context);
 
       std::stringstream outss;
-      boost::property_tree::write_json(outss, rpcresult);
+      boost::property_tree::write_json(outss, rpcresult, false);
       
       response_.body() = outss.str();
       apply_cors_headers(response_);
