@@ -98,10 +98,9 @@ public:
 
   void http_start(web::error_code = web::error_code(), size_t = 0)
   {
-    buffer_.clear(); 
     request_ = request_type(); 
     response_ = response_type();
-    web::http::async_read(socket_, buffer_, request_, 
+    web::http::async_read(socket_, ibuffer_, request_, 
       web::bind_front_handler(
         &web_session::on_http_read, shared_from_this()));
   }
@@ -162,7 +161,7 @@ private:
     try {
       json_t parsed_request;
       std::stringstream ss;
-      ss.write((char*)buffer_.data().data(), buffer_.data().size());
+      ss.write((char*)ibuffer_.data().data(), ibuffer_.data().size());
       dbglog << "ws content: " << ss.str();
       boost::property_tree::read_json(ss, parsed_request);
       output = invoke_rpc_method(parsed_request, *wsctx_);
@@ -177,9 +176,10 @@ private:
     std::string serialized = ssout.str();
     dbglog << "ws out content: " << serialized;
     
-    auto write = buffer_.prepare(serialized.size());
+    auto write = obuffer_.prepare(serialized.size());
     std::copy(serialized.begin(), serialized.end(), 
       reinterpret_cast<char*>(write.data()));
+    obuffer_.commit(serialized.size());
   }
 
   void process_http_request() 
@@ -295,8 +295,8 @@ private:
 
 private:
   void ws_async_read() {
-    buffer_.consume(buffer_.size());
-    ws_->async_read(buffer_, web::bind_front_handler(
+    ibuffer_.clear();
+    ws_->async_read(ibuffer_, web::bind_front_handler(
       &web_session::on_ws_read, shared_from_this()));
   }
 
@@ -345,17 +345,20 @@ private:
     } else {
       process_ws_request();
       ws_->text(ws_->got_text());
-      ws_->async_write(buffer_.data(), web::bind_front_handler(
+      ws_->async_write(obuffer_.data(), web::bind_front_handler(
         &web_session::on_ws_write, shared_from_this()));
     }
   }
 
-  void on_ws_write(web::error_code ec, size_t)
+  void on_ws_write(web::error_code ec, size_t n)
   {
     if (ec) {
       errlog << "ws error: " << ec.message();
+      obuffer_.clear();
+      ibuffer_.clear();
       ws_async_read();
     } else {
+      obuffer_.consume(n);
       ws_async_read();
     }
   }
@@ -396,7 +399,8 @@ private:
 private:
   socket_type socket_;
   std::optional<stream_type> ws_;
-  buffer_type buffer_;
+  buffer_type ibuffer_;
+  buffer_type obuffer_;
   request_type request_;
   response_type response_;
   error_response_type eresponse_;
