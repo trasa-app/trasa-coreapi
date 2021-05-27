@@ -12,11 +12,11 @@
       },
       {
         "type": "jwt+hs256",
-        "name": "dev-api-key-1",
+        "name": "XpressDelivery",
         "issuer": "coreapi@trasa.engineering",
-        "audience": "staff@trasa.engineering",
+        "audience": "XpressDelivery",
         "keys": {
-            "coreapi@trasa.engineering": "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV"
+            "XpressDelivery": "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJY"
           }
       }
     ]
