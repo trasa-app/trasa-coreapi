@@ -98,7 +98,8 @@ void init(json_t const&)
 
   // Add it to the core
   logging::core::get()->add_sink(sink);
-
+  logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::trace);
+  
   // Add some attributes too
   logging::core::get()->add_global_attribute("ts", attrs::local_clock());
   logging::core::get()->add_global_attribute("#", attrs::counter<unsigned int>());

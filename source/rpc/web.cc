@@ -210,6 +210,8 @@ private:
     // are not supported.
     if (request_.method() == web::http::verb::post) {
       boost::property_tree::read_json(ss, parsed_request);
+      tracelog << "http request: " << ss.str();
+
       json_t rpcresult;
       rpcresult.add("jsonrpc", "2.0");
       if (auto id = parsed_request.get_optional<std::string>("id"); id.has_value()) {
@@ -220,7 +222,7 @@ private:
 
       std::stringstream outss;
       boost::property_tree::write_json(outss, rpcresult, false);
-      
+      tracelog << "http response: " << outss.str();
       response_.body() = outss.str();
       apply_cors_headers(response_);
       response_.keep_alive(false);
