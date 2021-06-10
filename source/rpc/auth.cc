@@ -10,6 +10,7 @@
 #include <future>
 #include <sstream>
 #include <cassert>
+#include <shared_mutex>
 #include <unordered_map>
 
 #include <curl/curl.h>
@@ -164,30 +165,25 @@ std::vector<validator> read_validator(json_t const& entry) {
 class auth::impl 
 {
 public:
-  impl(json_t const& cfg) 
+  impl(json_t const& cfg)
+  : cfg_(cfg)
   {
-    for (auto const& keyset: cfg) {
-      try {
-        for (auto const& v: read_validator(keyset.second)) {
-          keys_.emplace(v.kid(), v);
-        }
-      } catch(const std::exception& e) {
-        warnlog << "failed to import auth jwk: " << e.what() 
-                << ". key def: " << to_string(keyset.second);
+    refresh_ = std::thread([this]() {
+      while (true) {
+        // Google refreshes their Firebase auth 
+        // tokens every 3600 seconds. Redownload
+        // remote keys and keep them in memory
+        refresh_auth_keys(cfg_);
+        std::this_thread::sleep_for(
+          std::chrono::seconds(3600));
       }
-    }
-
-    assert(!keys_.empty());
-    for (auto const& kv: keys_) {
-      infolog << "activated authentication key " << kv.first
-              << " with issuer " << kv.second.issuer() 
-              << " with audience " << kv.second.audience();
-    }
+    });
   }
 
 public:
   json_t authorize(std::string_view const& token) const
   { 
+    std::shared_lock lock(mutex_);
     auto decoded = jwt::decode(std::string(token));
     if (auto it = keys_.find(decoded.get_key_id()); it != keys_.end()) {
       it->second.verify(decoded);
@@ -203,12 +199,46 @@ public:
 
 public:
   size_t size() const 
-  { return keys_.size(); }
+  { 
+    std::shared_lock lock(mutex_);
+    return keys_.size(); 
+  }
 
   bool empty() const 
-  { return keys_.empty(); }
+  { 
+    std::shared_lock lock(mutex_);
+    return keys_.empty(); 
+  }
 
 private:
+  void refresh_auth_keys(json_t const& cfg)
+  {
+    std::unique_lock lock(mutex_);
+    for (auto const& keyset: cfg) {
+      try {
+        for (auto const& v: read_validator(keyset.second)) {
+          if (keys_.find(v.kid()) == keys_.end()) {
+            keys_.emplace(v.kid(), v);
+          }
+        }
+      } catch(const std::exception& e) {
+        warnlog << "failed to import auth jwk: " << e.what() 
+                << ". key def: " << to_string(keyset.second);
+      }
+    }
+
+    assert(!keys_.empty());
+    for (auto const& kv: keys_) {
+      infolog << "activated authentication key " << kv.first
+              << " with issuer " << kv.second.issuer() 
+              << " with audience " << kv.second.audience();
+    }
+  }
+
+private:
+  json_t const& cfg_;
+  std::thread refresh_;
+  mutable std::shared_mutex mutex_;
   std::unordered_map<std::string, validator> keys_;
 };
 
