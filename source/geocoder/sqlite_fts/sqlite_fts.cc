@@ -84,7 +84,8 @@ lookup_result sqlite_backend::building_matches(
   }
 
   sqlss << "' COLLATE NO_PL_ACCENTS ";
-  sqlss << "ORDER BY city, number";
+  sqlss << "ORDER BY city, number ";
+  sqlss << "LIMIT 15";
 
   sqlite3_stmt *stmt = nullptr;
   std::string query(sqlss.str());
@@ -135,7 +136,8 @@ lookup_result sqlite_backend::street_hints(
   }
 
   sqlss << "' COLLATE NO_PL_ACCENTS ";
-  sqlss << "ORDER BY street, city";
+  sqlss << "ORDER BY street, city ";
+  sqlss << "LIMIT 15";
 
   sqlite3_stmt *stmt = nullptr;
   std::string query(sqlss.str());
